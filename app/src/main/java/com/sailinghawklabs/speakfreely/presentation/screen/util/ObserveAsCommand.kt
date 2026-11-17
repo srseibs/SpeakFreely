@@ -1,4 +1,4 @@
-package com.sailinghawklabs.myprojecttemplate.presentation.screen.util
+package com.sailinghawklabs.speakfreely.presentation.screen.util
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect

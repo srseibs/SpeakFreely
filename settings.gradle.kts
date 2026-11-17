@@ -22,6 +22,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "MyProjectTemplate"
+rootProject.name = "SpeakFreely"
 include(":app")
  

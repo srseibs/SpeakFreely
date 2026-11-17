@@ -1,4 +1,4 @@
-package com.sailinghawklabs.myprojecttemplate
+package com.sailinghawklabs.speakfreely
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.sailinghawklabs.myprojecttemplate.presentation.theme.AppTheme
+import com.sailinghawklabs.speakfreely.presentation.theme.AppTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

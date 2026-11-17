@@ -1,4 +1,4 @@
-package com.sailinghawklabs.myprojecttemplate.presentation.screen.util
+package com.sailinghawklabs.speakfreely.presentation.screen.util
 
 import java.time.LocalDate
 import java.time.LocalDateTime

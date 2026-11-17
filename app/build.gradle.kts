@@ -6,7 +6,7 @@ plugins {
     alias(libs.plugins.kotlinx.serialization)
 }
 android {
-    namespace = "com.sailinghawklabs.myprojecttemplate"
+    namespace = "com.sailinghawklabs.speakfreely"
     compileSdk {
         version = release(37)
     }

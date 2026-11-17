@@ -1,4 +1,4 @@
-package com.sailinghawklabs.myprojecttemplate.presentation.theme
+package com.sailinghawklabs.speakfreely.presentation.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme

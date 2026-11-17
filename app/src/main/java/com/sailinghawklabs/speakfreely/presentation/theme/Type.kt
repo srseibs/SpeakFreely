@@ -1,4 +1,4 @@
-package com.sailinghawklabs.myprojecttemplate.presentation.theme
+package com.sailinghawklabs.speakfreely.presentation.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

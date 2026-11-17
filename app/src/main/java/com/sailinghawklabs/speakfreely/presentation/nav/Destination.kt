@@ -1,4 +1,4 @@
-package com.sailinghawklabs.myprojecttemplate.presentation.nav
+package com.sailinghawklabs.speakfreely.presentation.nav
 
 import kotlinx.serialization.Serializable
 

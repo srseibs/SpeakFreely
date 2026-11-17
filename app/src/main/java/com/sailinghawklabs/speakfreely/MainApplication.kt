@@ -1,4 +1,4 @@
-package com.sailinghawklabs.myprojecttemplate
+package com.sailinghawklabs.speakfreely
 
 import android.app.Application
 

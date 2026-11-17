@@ -1,4 +1,4 @@
-package com.sailinghawklabs.myprojecttemplate.presentation.screen.util
+package com.sailinghawklabs.speakfreely.presentation.screen.util
 
 import java.text.NumberFormat
 import java.util.Locale
