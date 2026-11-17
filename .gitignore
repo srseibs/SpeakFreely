@@ -1,0 +1,46 @@
+# Built application files & bundles
+*.apk
+*.ap_
+*.aab
+
+# Files for the Kotlin/Java VM
+*.class
+
+# Android Studio & IntelliJ files
+*.iml
+.idea/
+.gradle/
+/.idea/workspace.xml
+/.idea/repositories.xml
+/.idea/tasks.xml
+/.idea/gradle.xml
+/.idea/dictionaries
+/.idea/libraries
+
+# Local configuration file (contains Android SDK path)
+local.properties
+/local.properties
+
+# Log Files
+*.log
+
+# Android Studio profiler captures & native build
+/captures
+.externalNativeBuild
+.cxx/
+
+# Gradle build output (root and all sub-modules)
+build/
+**/build/
+
+# Kotlin compiler cache
+.kotlin/
+
+# Signing keys & secrets (CRITICAL to avoid committing private keys)
+*.jks
+*.keystore
+google-services.json
+
+# OS generated files
+.DS_Store
+Thumbs.db
