@@ -1,5 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.MyProjectTemplate" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.SpeakFreely" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!-- Startup Splash Screen Theme -->
+    <style name="Theme.App.Starting" parent="Theme.SplashScreen">
+        <!-- Set background color to match your dark splash screen -->
+        <item name="windowSplashScreenBackground">@android:color/black</item>
+
+        <!-- Set to transparent for zero system logo -->
+        <item name="windowSplashScreenAnimatedIcon">@android:color/transparent</item>
+
+        <!-- Theme to switch to after app launch completes -->
+        <item name="postSplashScreenTheme">@style/Theme.SpeakFreely</item>
+    </style>
+
 </resources>

@@ -304,12 +304,12 @@ supplemented by modal sheets:
 ===============================================================
 
   ┌─────────────────────────────────────────────────────────┐
-  │ INPUT · Auto-detecting language into Spanish...        │
+  │ INPUT · Auto-detecting language into English...         │
   │─────────────────────────────────────────────────────────│
   │                                                         │
   │  "That looks very good!"                                │
   │                                                         │
-  │  (Tap text to edit)                 [ ⌨️ ] [ 🎙️ Mute Mic ]│
+  │  (Tap text to edit)                [ ⌨️ ] [ 🎙️ Mute Mic ]│
   └─────────────────────────────────────────────────────────┘
 
             [ ⇄ Set TRANSLATION to English (US) ]
@@ -320,7 +320,7 @@ supplemented by modal sheets:
   │                                                         │
   │  "¡Eso se ve muy bien!"                                 │
   │                                                         │
-  │  (Tap text to edit)                     [ 📋 ]  [ ▶ Play ]│
+  │  (Tap text to edit)                   [ 📋 ]  [ ▶ Play ]│
   └─────────────────────────────────────────────────────────┘
 
 ===============================================================

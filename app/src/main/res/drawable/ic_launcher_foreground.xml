@@ -1,24 +1,9 @@
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="512"
-    android:viewportHeight="350.26">
-  <group
-      android:scaleX="0.51"
-      android:scaleY="0.3488918"
-      android:translateX="125.44"
-      android:translateY="114.02858">
-    <path
-        android:fillColor="#424C57"
-        android:fillType="evenOdd"
-        android:pathData="M235.68,65.23L46.41,49.97C21.08,47.93 -2.39,70.9 0.19,96.18l15.26,149.4c2.58,25.28 20.81,46.21 46.21,46.21h48.07l71.82,58.47 -5.19,-58.47h59.32c25.41,0 46.22,-20.79 46.22,-46.21v-134.14c0,-25.42 -20.88,-44.17 -46.22,-46.22z" />
-    <path
-        android:fillColor="#337EC6"
-        android:fillType="evenOdd"
-        android:pathData="M276.31,15.39L465.59,0.13c25.34,-2.04 48.8,20.94 46.22,46.21l-15.26,149.4c-2.58,25.28 -20.81,46.21 -46.22,46.21h-50.1l-71.82,58.47 5.19,-58.47h-57.29c-25.41,0 -46.22,-20.79 -46.22,-46.21V61.6c0,-25.42 20.88,-44.17 46.22,-46.21z" />
-    <path
-        android:fillColor="#fff"
-        android:fillType="evenOdd"
-        android:pathData="M85.8,116.9h42.64L128.44,104.89h19.05v12.02h42.8v19.73h-8.79c-1.59,12.46 -5.07,22.73 -10.99,33.79 -5.01,9.35 -11.47,18.35 -18.98,26.98 11.98,14.33 26.86,26.8 44.57,38.17l-9.8,15.27c-18.59,-11.93 -34.39,-25.07 -47.37,-40.2 -11.61,11.23 -24.8,21.69 -38.61,31.25l-10.3,-14.9c13.67,-9.46 26.66,-19.79 37.83,-30.8 -10.3,-15.07 -18.18,-31.98 -23.64,-51.43l17.48,-4.9c4.47,15.95 10.75,29.99 18.81,42.56 5.5,-6.66 10.26,-13.5 14.02,-20.51 4.61,-8.62 7.09,-15.75 8.65,-25.27h-77.37v-19.73zM399.07,158.59h-57.15l-7.47,25.51h-28.16c12.19,-32.26 26.27,-71.01 38.46,-103.29 4.39,-11.66 9.39,-30.98 25.36,-30.98 16.56,0 22.06,17.7 26.67,29.93l39.05,104.86h-29.05l-7.71,-26.04zM392.97,133.78l-22.41,-58.49 -22.47,58.49h44.88z" />
-  </group>
-</vector>
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:bottom="18dp"
+        android:drawable="@drawable/logo_static_no_bg"
+        android:left="18dp"
+        android:right="18dp"
+        android:top="18dp" />
+</layer-list>

@@ -33,7 +33,6 @@ lifecycleRuntimeKtx = "2.11.0"
 moshi = "1.15.2"
 moshiKotlin = "1.15.2"
 navigationCompose = "2.10.2"
-lottie = "6.7.1"
 splashscreen = "1.2.0"
 
 
@@ -100,8 +99,6 @@ androidx-navigation-compose = { group = "androidx.navigation", name = "navigatio
 
 # Splash screen and Lottie
 androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "splashscreen" }
-lottie-compose = { module = "com.airbnb.android:lottie-compose", version.ref = "lottie" }
-
 
 [bundles]
 room = [

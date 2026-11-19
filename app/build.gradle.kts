@@ -87,8 +87,7 @@ dependencies {
     // Desugaring so we can use LocalDateTime with older versions of Android
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 
-    // Splash & Animation
+    // Splash
     implementation(libs.androidx.core.splashscreen)
-    implementation(libs.lottie.compose)
 
 }
