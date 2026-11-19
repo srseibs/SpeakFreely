@@ -93,4 +93,10 @@ dependencies {
     // Datastore
     implementation(libs.androidx.datastore.preferences)
 
+    // ML Kit
+    implementation(libs.google.mlkit.translate)
+
+    // Play Services
+    implementation(libs.kotlinx.coroutines.play.services)
+
 }

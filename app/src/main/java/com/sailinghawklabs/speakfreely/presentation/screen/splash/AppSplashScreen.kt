@@ -168,14 +168,27 @@ fun AppSplashScreenContent(
                 .padding(horizontal = 24.dp)
         )
 
-        state.statusMessage?.let { status ->
+        if (state.statusLogs.isNotEmpty()) {
             Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = status.asString(),
-                style = MaterialTheme.typography.labelMedium,
-                color = TextCream.copy(alpha = 0.7f),
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp)
+                    .padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.Bottom,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                val visibleLogs = state.statusLogs.takeLast(5)
+                visibleLogs.forEach { log ->
+                    val isLatest = log == visibleLogs.last()
+                    Text(
+                        text = log.asString(),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = TextCream.copy(alpha = if (isLatest) 0.9f else 0.4f),
+                        modifier = Modifier.padding(vertical = 2.dp)
+                    )
+                }
+            }
         }
 
         if (state.showPermissionRationale) {
