@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.sailinghawklabs.speakfreely.presentation.TypographySample
 import com.sailinghawklabs.speakfreely.presentation.theme.AppTheme
 
 class MainActivity : ComponentActivity() {
@@ -22,7 +23,8 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    AppSplashScreen()
+                    // AppSplashScreen()
+                    TypographySample()
                 }
             }
         }
