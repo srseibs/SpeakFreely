@@ -6,14 +6,14 @@ import kotlinx.serialization.Serializable
 sealed interface Destination {
 
     @Serializable
-    data object Startup : Destination
+    data object Splash : Destination
 
 
     @Serializable
-    data object ListScreen : Destination
+    data object Main : Destination
 
     @Serializable
-    data class DetailsScreen(val id: Long) : Destination
+    data object Settings : Destination
 }
 
 

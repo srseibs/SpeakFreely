@@ -261,12 +261,13 @@ To support these use cases seamlessly, **SpeakFreely** requires the following pe
 
 ### 5. UI & Layout Preferences
 
-- **Dual-Direction Display (180° Flip)**: `Boolean` (Flips the top half of the screen upside down so
-  User 2 across the table can read their text right-side up).
 - **Font Size Modifier**: Normal, Large, Extra Large (for accessibility and quick reading across a
   table).
 - **Show Original STT Transcript**: `Boolean` (Toggle whether the original spoken transcript is
   displayed alongside the translated result).
+- **180° Screen Flip**: *Removed/Deprecated*. Evaluated and removed to simplify UX and prevent
+  Android OS orientation/inset conflicts. Focus is placed on primary One-Way Listening and clean
+  upright cards.
 
 ---
 
@@ -290,8 +291,8 @@ supplemented by modal sheets:
   - Supports both **Turn-Taking** and **Hands-Free Continuous** modes via mode toggle.
   - Top bar language selector pills (quick swap between `ownerLanguage` and `foreignInputLanguage`/
     `foreignOutputLanguage`).
-  - Split display areas: Top box for Foreign Speaker (with optional 180° rotation), Bottom box for
-    Owner.
+  - Split display areas: Top card for `INPUT` (always Auto-Detecting), Bottom card for
+    `TRANSLATION`.
   - Audio visualizer / Mic pulse indicator during active listening.
   - Manual TTS audio replay buttons and text edit fallback (`TextField`).
   - Navigation affordances to `Destination.Settings`.
@@ -324,7 +325,7 @@ supplemented by modal sheets:
   └─────────────────────────────────────────────────────────┘
 
 ===============================================================
-  [ 🔄 Flip 180° ]    Mode: [ Tap to Record | [* Continuous *] ]
+  Mode: [ Tap to Record | [* Continuous *] ]
 ===============================================================
 ```
 
@@ -337,7 +338,7 @@ supplemented by modal sheets:
   - TTS speech rate slider & voice gender picker.
   - Offline Model Download Manager (view/download/delete ML Kit language packs).
   - Cloud vs Offline engine priority toggle.
-  - 180° Screen Flip and Font Size accessibility toggles.
+  - Font Size accessibility toggles.
 
 ### Additional Recommended Modal Sheets / Sub-Destinations:
 
