@@ -78,11 +78,17 @@ dependencies {
     // Networking - Retrofit
     // implementation(libs.bundles.networking.retrofit)
 
+    // Coil
+    implementation(libs.bundles.coil)
 
     // Icons
     implementation(libs.bundles.icons)
 
     // Desugaring so we can use LocalDateTime with older versions of Android
     coreLibraryDesugaring(libs.desugar.jdk.libs)
+
+    // Splash & Animation
+    implementation(libs.androidx.core.splashscreen)
+    implementation(libs.lottie.compose)
 
 }
