@@ -27,14 +27,10 @@ class UserPreferencesRepositoryImpl(
     override fun observeUserPreferences(): Flow<UserPreferences> {
         return dataStore.data.map { prefs ->
             UserPreferences(
-                ownerLanguage = Language.fromBcp47Code(
-                    bcp47Code = prefs[PreferencesKeys.OWNER_LANG_TAG],
-                    default = Language.DEFAULT_OWNER_LANGUAGE
-                ),
-                targetLanguage = Language.fromBcp47Code(
-                    bcp47Code = prefs[PreferencesKeys.TARGET_LANG_TAG],
-                    default = Language.DEFAULT_TARGET_LANGUAGE
-                ),
+                ownerLanguage = Language.fromBcp47Code(prefs[PreferencesKeys.OWNER_LANG_TAG])
+                    ?: Language.DEFAULT_OWNER_LANGUAGE,
+                targetLanguage = Language.fromBcp47Code(prefs[PreferencesKeys.TARGET_LANG_TAG])
+                    ?: Language.DEFAULT_TARGET_LANGUAGE,
                 ttsSpeechRate = prefs[PreferencesKeys.TTS_SPEECH_RATE] ?: 1.0f,
                 mode = prefs[PreferencesKeys.CONVERSATION_MODE]?.let { name ->
                     runCatching { ConversationMode.valueOf(name) }.getOrDefault(ConversationMode.DEFAULT)

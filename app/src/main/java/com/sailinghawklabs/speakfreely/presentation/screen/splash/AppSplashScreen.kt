@@ -8,14 +8,20 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -23,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -31,6 +38,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.sailinghawklabs.speakfreely.R
+import com.sailinghawklabs.speakfreely.presentation.screen.util.AudioPermissionHandler
+import com.sailinghawklabs.speakfreely.presentation.screen.util.AudioPermissionRationaleCard
 import com.sailinghawklabs.speakfreely.presentation.theme.AppTheme
 import com.sailinghawklabs.speakfreely.presentation.theme.TextCream
 import kotlinx.coroutines.Dispatchers
@@ -45,9 +54,27 @@ fun AppSplashScreen(
     onGotoMainScreen: () -> Unit
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    var launchPermissionRequest by remember { mutableStateOf<(() -> Unit)?>(null) }
+
+    AudioPermissionHandler.ListenForPermissionState(
+        onPermissionResult = { isGranted, isPermanentlyDenied ->
+            viewModel.onEvent(
+                AppSplashScreenEvent.PermissionIsChecked(
+                    isGranted,
+                    isPermanentlyDenied
+                )
+            )
+        },
+        onProvideLauncher = { launcher ->
+            launchPermissionRequest = launcher
+        }
+    )
 
     AppSplashScreenContent(
         state = state,
+        onGrantPermissionClick = { launchPermissionRequest?.invoke() },
+        onOpenSettingsClick = { AudioPermissionHandler.openAppSettings(context) }
     )
 
     ObserveAsCommand(flow = viewModel.commandsForScreen) { command ->
@@ -60,6 +87,8 @@ fun AppSplashScreen(
 @Composable
 fun AppSplashScreenContent(
     state: AppSplashState,
+    onGrantPermissionClick: () -> Unit = {},
+    onOpenSettingsClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     // Animation properties
@@ -103,7 +132,7 @@ fun AppSplashScreenContent(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.5f)
+                .fillMaxHeight(0.45f)
                 .background(
                     brush = Brush.radialGradient(
                         colors = listOf(
@@ -138,6 +167,26 @@ fun AppSplashScreenContent(
                 .align(Alignment.CenterHorizontally)
                 .padding(horizontal = 24.dp)
         )
+
+        state.statusMessage?.let { status ->
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = status.asString(),
+                style = MaterialTheme.typography.labelMedium,
+                color = TextCream.copy(alpha = 0.7f),
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+        }
+
+        if (state.showPermissionRationale) {
+            Spacer(modifier = Modifier.height(16.dp))
+            AudioPermissionRationaleCard(
+                isPermanentlyDenied = state.isPermissionPermanentlyDenied,
+                onGrantClick = onGrantPermissionClick,
+                onOpenSettingsClick = onOpenSettingsClick,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+        }
     }
 }
 
@@ -146,7 +195,10 @@ fun AppSplashScreenContent(
 private fun Preview() {
     AppTheme {
         AppSplashScreenContent(
-            state = AppSplashState(),
+            state = AppSplashState(
+                showPermissionRationale = true,
+                isPermissionPermanentlyDenied = true
+            ),
         )
     }
 }

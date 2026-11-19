@@ -10,13 +10,13 @@ data class Language(
 ) {
     companion object {
         val DEFAULT_OWNER_LANGUAGE = fromBcp47Code("en-US")
-        val DEFAULT_TARGET_LANGUAGE = fromBcp47Code("es-MX")
+            ?: error("Invalid default BCP-47 language tag: en-US")
 
-        fun fromBcp47Code(
-            bcp47Code: String?,
-            default: Language = DEFAULT_OWNER_LANGUAGE
-        ): Language {
-            if (bcp47Code.isNullOrBlank()) return default
+        val DEFAULT_TARGET_LANGUAGE = fromBcp47Code("es-MX")
+            ?: error("Invalid default BCP-47 language tag: es-MX")
+
+        fun fromBcp47Code(bcp47Code: String?): Language? {
+            if (bcp47Code.isNullOrBlank()) return null
             val locale = Locale.forLanguageTag(bcp47Code)
 
             val displayName =
@@ -33,7 +33,6 @@ data class Language(
             )
         }
 
-        // Dynamically converts ISO country code ("MX" -> 🇲🇽, "US" -> 🇺🇸, "JP" -> 🇯🇵)
         private fun countryCodeToFlagEmoji(countryCode: String): String {
             if (countryCode.length != 2) return ""
             val first = Character.codePointAt(countryCode.uppercase(), 0) - 0x41 + 0x1F1E6

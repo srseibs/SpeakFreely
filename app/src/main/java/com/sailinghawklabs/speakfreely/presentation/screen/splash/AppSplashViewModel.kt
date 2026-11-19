@@ -3,26 +3,24 @@ package com.sailinghawklabs.speakfreely.presentation.screen.splash
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sailinghawklabs.speakfreely.domain.repository.UserPreferencesRepository
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
+import com.sailinghawklabs.speakfreely.presentation.screen.util.UiText
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
-
 
 class AppSplashViewModel(
     private val repository: UserPreferencesRepository
 ) : ViewModel() {
 
-
     private val _state = MutableStateFlow(AppSplashState())
 
-    // Combine local UI state with repository.observe*() reactive Flow stream for real-time updates
     val state = _state
         .stateIn(
             scope = viewModelScope,
@@ -30,40 +28,50 @@ class AppSplashViewModel(
             initialValue = AppSplashState()
         )
 
-
     init {
-        // ViewModel init runs ONCE per screen instance, preventing re-fetching when navigating back
         getOneShotData()
     }
 
-    // Handles the one-shot suspend repository fetches
     private fun getOneShotData() {
         viewModelScope.launch {
+            updateStatus("Loading preferences...")
+            preloadDataStore()
 
-            // Minimum splash display timer (1.5s) for animation smoothness
-            val minDisplayTimer = async {
-                delay(1500L.milliseconds)
+            updateStatus("Checking ML Kit models...")
+            getStatusOfML()
+
+            updateStatus("Warming up TTS engine...")
+            warmUpTTS()
+
+            // If permission is not yet granted, pause until isPermissionGranted becomes true
+            if (!_state.value.isPermissionGranted) {
+                _state.update {
+                    it.copy(
+                        showPermissionRationale = true,
+                        statusMessage = UiText.DynamicString("Microphone permission required.")
+                    )
+                }
+                _state.first { it.isPermissionGranted }
             }
 
-            // Real background initialization & engine warm-up
-            val initializationWork = async {
-                preloadDataStore()
-                getStatusOfML()
-                warmUpTTS()
-                warmUpSpeechRecognizer()
-                verifyPermissions()
-            }
+            updateStatus("Initializing Speech Recognizer...")
+            warmUpSpeechRecognizer()
 
-            // Wait for BOTH the timer AND real initialization work to finish
-            awaitAll(minDisplayTimer, initializationWork)
+            updateStatus("Ready!")
+            delay(500.milliseconds)
 
-            // Transition seamlessly to Destination.Main
+            _state.update { it.copy(isReady = true) }
             send(AppSplashScreenCommand.NavigateToMainScreen)
         }
     }
 
+    private suspend fun updateStatus(message: String) {
+        _state.update { it.copy(statusMessage = UiText.DynamicString(message)) }
+        delay(600.milliseconds)
+    }
+
     private suspend fun preloadDataStore() {
-        // Load DataStore preferences into memory
+        repository.getUserPreferences()
     }
 
     private suspend fun getStatusOfML() {
@@ -78,10 +86,6 @@ class AppSplashViewModel(
         // Bind SpeechRecognizer engine
     }
 
-    private suspend fun verifyPermissions() {
-        // Audit RECORD_AUDIO permission state
-    }
-
     private val _commands = Channel<AppSplashScreenCommand>()
     val commandsForScreen = _commands.receiveAsFlow()
 
@@ -91,8 +95,29 @@ class AppSplashViewModel(
 
     fun onEvent(event: AppSplashScreenEvent) {
         when (event) {
-            else -> TODO("Handle events")
+            is AppSplashScreenEvent.PermissionIsChecked -> {
+                if (event.isGranted) {
+                    _state.update {
+                        it.copy(
+                            isPermissionGranted = true,
+                            showPermissionRationale = false,
+                            isPermissionPermanentlyDenied = false
+                        )
+                    }
+                } else {
+                    _state.update {
+                        it.copy(
+                            isPermissionGranted = false,
+                            showPermissionRationale = true,
+                            isPermissionPermanentlyDenied = event.isPermanentlyDenied,
+                            statusMessage = UiText.DynamicString(
+                                if (event.isPermanentlyDenied) "Microphone disabled in Settings."
+                                else "Microphone permission required."
+                            )
+                        )
+                    }
+                }
+            }
         }
     }
-
 }

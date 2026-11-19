@@ -5,18 +5,24 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.sailinghawklabs.speakfreely.AppSplashScreen
+import com.sailinghawklabs.speakfreely.presentation.screen.splash.AppSplashScreen
 
 @Composable
 fun AppNavigator(
     navController: NavHostController = rememberNavController()
 ) {
     NavHost(
-        navController = navController, startDestination = Destination.Splash
+        navController = navController,
+        startDestination = Destination.Splash
     ) {
-
         composable<Destination.Splash> {
-            AppSplashScreen()
+            AppSplashScreen(
+                onGotoMainScreen = {
+                    navController.navigate(Destination.Main) {
+                        popUpTo<Destination.Splash> { inclusive = true }
+                    }
+                }
+            )
         }
 
         composable<Destination.Main> {
@@ -27,6 +33,4 @@ fun AppNavigator(
 
         }
     }
-
 }
-
