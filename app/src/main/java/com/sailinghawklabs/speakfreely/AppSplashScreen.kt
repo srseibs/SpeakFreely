@@ -19,12 +19,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.sailinghawklabs.speakfreely.presentation.theme.AppTheme
+import com.sailinghawklabs.speakfreely.presentation.theme.TextCream
 import kotlinx.coroutines.launch
 
 @Composable
@@ -100,6 +102,7 @@ fun AppSplashScreen(
 
         Image(
             painter = painterResource(R.drawable.app_name_pic),
+            colorFilter = ColorFilter.tint(TextCream),
             contentScale = ContentScale.FillWidth,
             contentDescription = null,
             modifier = Modifier

@@ -40,3 +40,6 @@ val ErrorRed = Color(0xFFFFB4AB)
 val OnErrorRed = Color(0xFF690005)
 val ErrorContainerRed = Color(0xFF93000A)
 val OnErrorContainerRed = Color(0xFFFFDAD6)
+
+val TextCream = CopperOnPrimaryContainer
+
