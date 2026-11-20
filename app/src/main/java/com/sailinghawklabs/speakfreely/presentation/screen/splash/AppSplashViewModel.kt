@@ -1,9 +1,12 @@
 package com.sailinghawklabs.speakfreely.presentation.screen.splash
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.mlkit.common.model.RemoteModelManager
 import com.google.mlkit.nl.translate.TranslateRemoteModel
+import com.sailinghawklabs.speakfreely.domain.repository.SttRepository
+import com.sailinghawklabs.speakfreely.domain.repository.TtsRepository
 import com.sailinghawklabs.speakfreely.domain.repository.UserPreferencesRepository
 import com.sailinghawklabs.speakfreely.presentation.screen.util.UiText
 import kotlinx.coroutines.channels.Channel
@@ -19,7 +22,9 @@ import kotlinx.coroutines.tasks.await
 import kotlin.time.Duration.Companion.milliseconds
 
 class AppSplashViewModel(
-    private val repository: UserPreferencesRepository
+    private val repository: UserPreferencesRepository,
+    private val ttsRepository: TtsRepository,
+    private val sttRepository: SttRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AppSplashState())
@@ -37,28 +42,28 @@ class AppSplashViewModel(
 
     private fun getOneShotData() {
         viewModelScope.launch {
-            updateStatus("Loading preferences...")
+            updateStatus("Loading preferences...", LogSeverity.INFO)
             preloadDataStore()
 
-            updateStatus("Checking ML Kit models...")
+            updateStatus("Checking ML Kit models...", LogSeverity.INFO)
             getStatusOfML()
 
-            updateStatus("Warming up TTS engine...")
+            updateStatus("Warming up TTS engine...", LogSeverity.INFO)
             warmUpTTS()
 
             // If permission is not yet granted, pause until isPermissionGranted becomes true
             if (!_state.value.isPermissionGranted) {
-                updateStatus("Microphone permission required.")
+                updateStatus("⚠️ Microphone permission required.", LogSeverity.WARNING)
                 _state.update {
                     it.copy(showPermissionRationale = true)
                 }
                 _state.first { it.isPermissionGranted }
             }
 
-            updateStatus("Initializing Speech Recognizer...")
+            updateStatus("Initializing Speech Recognizer...", LogSeverity.INFO)
             warmUpSpeechRecognizer()
 
-            updateStatus("Ready!")
+            updateStatus("Ready!", LogSeverity.INFO)
             delay(500.milliseconds)
 
             _state.update { it.copy(isReady = true) }
@@ -66,11 +71,25 @@ class AppSplashViewModel(
         }
     }
 
-    private suspend fun updateStatus(message: String) {
+    private suspend fun updateStatus(
+        message: String,
+        severity: LogSeverity = LogSeverity.INFO
+    ) {
         _state.update {
-            it.copy(statusLogs = it.statusLogs + UiText.DynamicString(message))
+            it.copy(
+                statusLogs = it.statusLogs + SplashLogEntry(
+                    text = UiText.DynamicString(message),
+                    severity = severity
+                )
+            )
         }
-        delay(600.milliseconds)
+
+        val dwellDuration = when (severity) {
+            LogSeverity.INFO -> 500.milliseconds
+            LogSeverity.WARNING -> 1200.milliseconds
+            LogSeverity.ERROR -> 1800.milliseconds
+        }
+        delay(dwellDuration)
     }
 
     private suspend fun preloadDataStore() {
@@ -85,18 +104,29 @@ class AppSplashViewModel(
                 .await()
 
             val downloadedCount = downloadedModels.size
-            updateStatus("Offline ML Models: $downloadedCount available")
+            updateStatus("Offline ML Models: $downloadedCount available", LogSeverity.INFO)
+            Log.i("Splash", "ML Model count: $downloadedCount")
         } catch (e: Exception) {
-            updateStatus("Checking ML Kit models...")
+            updateStatus("⚠️ Checking ML Kit models failed", LogSeverity.WARNING)
         }
     }
 
     private suspend fun warmUpTTS() {
-        // Bind and initialize TextToSpeech engine
+        val isTtsReady = ttsRepository.warmup()
+        if (isTtsReady) {
+            updateStatus("TTS Engine ready.", LogSeverity.INFO)
+        } else {
+            updateStatus("⚠️ TTS Engine unavailable (Audio replay disabled)", LogSeverity.WARNING)
+        }
     }
 
     private suspend fun warmUpSpeechRecognizer() {
-        // Bind SpeechRecognizer engine
+        val isSttReady = sttRepository.warmup()
+        if (isSttReady) {
+            updateStatus("Speech Recognizer ready.", LogSeverity.INFO)
+        } else {
+            updateStatus("⚠️ Speech Recognizer unavailable", LogSeverity.WARNING)
+        }
     }
 
     private val _commands = Channel<AppSplashScreenCommand>()
@@ -127,8 +157,9 @@ class AppSplashViewModel(
                     }
                     viewModelScope.launch {
                         updateStatus(
-                            if (event.isPermanentlyDenied) "Microphone disabled in Settings."
-                            else "Microphone permission required."
+                            if (event.isPermanentlyDenied) "⚠️ Microphone disabled in Settings."
+                            else "⚠️ Microphone permission required.",
+                            severity = LogSeverity.WARNING
                         )
                     }
                 }

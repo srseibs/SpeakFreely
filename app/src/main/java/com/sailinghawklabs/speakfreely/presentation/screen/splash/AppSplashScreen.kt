@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -126,13 +127,14 @@ fun AppSplashScreenContent(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.Black),
+            .background(Color.Black)
+            .systemBarsPadding(),
         verticalArrangement = Arrangement.Center
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.45f)
+                .fillMaxHeight(if (state.showPermissionRationale) 0.28f else 0.42f)
                 .background(
                     brush = Brush.radialGradient(
                         colors = listOf(
@@ -143,7 +145,7 @@ fun AppSplashScreenContent(
                         )
                     )
                 )
-                .padding(20.dp),
+                .padding(16.dp),
             contentAlignment = Alignment.Center
         ) {
             Image(
@@ -169,22 +171,28 @@ fun AppSplashScreenContent(
         )
 
         if (state.statusLogs.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(120.dp)
+                    .height(if (state.showPermissionRationale) 90.dp else 120.dp)
                     .padding(horizontal = 24.dp),
                 verticalArrangement = Arrangement.Bottom,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                val visibleLogs = state.statusLogs.takeLast(5)
+                val visibleLogs =
+                    state.statusLogs.takeLast(if (state.showPermissionRationale) 3 else 5)
                 visibleLogs.forEach { log ->
                     val isLatest = log == visibleLogs.last()
+                    val logColor = when (log.severity) {
+                        LogSeverity.INFO -> TextCream.copy(alpha = if (isLatest) 0.9f else 0.4f)
+                        LogSeverity.WARNING -> com.sailinghawklabs.speakfreely.presentation.theme.AmberSecondary
+                        LogSeverity.ERROR -> MaterialTheme.colorScheme.error
+                    }
                     Text(
-                        text = log.asString(),
+                        text = log.text.asString(),
                         style = MaterialTheme.typography.labelMedium,
-                        color = TextCream.copy(alpha = if (isLatest) 0.9f else 0.4f),
+                        color = logColor,
                         modifier = Modifier.padding(vertical = 2.dp)
                     )
                 }
@@ -192,12 +200,14 @@ fun AppSplashScreenContent(
         }
 
         if (state.showPermissionRationale) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             AudioPermissionRationaleCard(
                 isPermanentlyDenied = state.isPermissionPermanentlyDenied,
                 onGrantClick = onGrantPermissionClick,
                 onOpenSettingsClick = onOpenSettingsClick,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(bottom = 12.dp)
             )
         }
     }

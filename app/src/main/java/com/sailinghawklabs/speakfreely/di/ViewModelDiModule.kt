@@ -4,11 +4,12 @@ import com.sailinghawklabs.speakfreely.presentation.screen.splash.AppSplashViewM
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
-
 val viewModelDiModule = module {
     viewModel {
-        AppSplashViewModel(repository = get())
+        AppSplashViewModel(
+            repository = get(),
+            ttsRepository = get(),
+            sttRepository = get()
+        )
     }
-
-
 }
