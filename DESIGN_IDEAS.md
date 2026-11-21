@@ -18,17 +18,18 @@ for **SpeakFreely**.
   - `foreignOutputLanguage`: The outgoing target language translated to and spoken via TTS (e.g.
     `es-ES` or `de-DE`).
 
-### 2. `UiText` Pattern for Localized UI State & Messages
+### 2. Pragmatic String & `UiText` Pattern Strategy
 
-* **Status**: Approved
-* **Category**: Presentation & ViewModel State
-* **Problem**: Passing raw `String` resolved via `Context.getString()` in ViewModels locks strings
-  to the current locale and breaks pure ViewModel unit testing without Android mocks.
-* **Decision**: Use a `UiText` sealed interface (`DynamicString` vs `StringResource`) for all UI
-  labels, error messages, and validation state passed from ViewModels.
+* **Status**: Approved (Refined)
+* **Category**: Presentation & UI Development
+* **Decision**: Retain `UiText` utility (`presentation/screen/util/UiText.kt`) for future
+  localization and complex string resources (`R.string.*`), but use simple Kotlin `String` and
+  `String?` for UI card headers, labels, and state properties.
 * **Benefits**:
-    - ViewModels remain 100% Android-decoupled and easy to unit test.
-    - UI automatically updates when the system locale or language changes at runtime.
+  - Reduces verbosity and eliminates `UiText.DynamicString(...)` boilerplate during rapid feature
+    development.
+  - Zero friction for speech transcripts and dynamic language names (`"Spanish"`, `"English"`).
+  - Can easily be refactored to `UiText` later if full multi-language app UI localization is added.
 
 ### 3. Device Scope & Orientation Strategy
 

@@ -1,6 +1,6 @@
 package com.sailinghawklabs.speakfreely.di
 
-import com.sailinghawklabs.speakfreely.presentation.screen.MainViewModel
+import com.sailinghawklabs.speakfreely.presentation.screen.main.MainViewModel
 import com.sailinghawklabs.speakfreely.presentation.screen.splash.AppSplashViewModel
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module

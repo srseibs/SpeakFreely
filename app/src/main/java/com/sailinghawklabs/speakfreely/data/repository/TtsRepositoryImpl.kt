@@ -38,6 +38,27 @@ class TtsRepositoryImpl(
         if (!isInitialized || tts == null) return
         val locale = Locale.forLanguageTag(language.bcp47Code)
         tts?.language = locale
+
+        // 1. Find local voices matching the exact language + country/region (e.g. en-US or es-MX)
+        val exactDialectVoices = tts?.voices?.filter { voice ->
+            !voice.isNetworkConnectionRequired &&
+                    voice.locale.language == locale.language &&
+                    (locale.country.isBlank() || voice.locale.country.equals(
+                        locale.country,
+                        ignoreCase = true
+                    ))
+        }
+
+        // 2. Pick exact regional voice, or fallback to any local voice in that language
+        val bestVoice = exactDialectVoices?.firstOrNull()
+            ?: tts?.voices?.firstOrNull { !it.isNetworkConnectionRequired && it.locale.language == locale.language }
+
+        if (bestVoice != null) {
+            println("TTS Selected Regional Voice: name=${bestVoice.name}, locale=${bestVoice.locale}")
+            tts?.voice = bestVoice
+        }
+
+        println("TTS Speech Rate set to: $speechRate")
         tts?.setSpeechRate(speechRate)
         tts?.speak(text as CharSequence, TextToSpeech.QUEUE_FLUSH, null, "speak_freely_tts")
     }

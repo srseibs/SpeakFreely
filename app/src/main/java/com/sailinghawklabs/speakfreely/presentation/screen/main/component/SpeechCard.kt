@@ -18,16 +18,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.sailinghawklabs.speakfreely.presentation.screen.util.UiText
 import com.sailinghawklabs.speakfreely.presentation.theme.AppTheme
 
 @Composable
 fun SpeechCard(
-    headerTitle: UiText,
+    headerTitle: String,
     text: String,
     onTextChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    headerSubtitle: UiText? = null,
+    headerSubtitle: String? = null,
     containerColor: Color = MaterialTheme.colorScheme.surface,
     headerActions: @Composable (RowScope.() -> Unit)? = null,
     bottomActions: @Composable (RowScope.() -> Unit)? = null
@@ -52,13 +51,13 @@ fun SpeechCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = headerTitle.asString(),
+                        text = headerTitle,
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
                     headerSubtitle?.let { subtitle ->
                         Text(
-                            text = " · ${subtitle.asString()}",
+                            text = " · $subtitle",
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.secondary
                         )
@@ -115,8 +114,8 @@ fun SpeechCard(
 private fun SpeechCardPrev() {
     AppTheme {
         SpeechCard(
-            headerTitle = UiText.DynamicString("INPUT"),
-            headerSubtitle = UiText.DynamicString("Detected: Spanish (MX)"),
+            headerTitle = "INPUT",
+            headerSubtitle = "Detected: Spanish (MX)",
             text = "¿Dónde está la estación de tren más cercana?",
             onTextChange = { },
             containerColor = MaterialTheme.colorScheme.surfaceVariant,

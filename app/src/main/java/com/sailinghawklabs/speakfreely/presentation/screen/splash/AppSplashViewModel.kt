@@ -8,7 +8,6 @@ import com.google.mlkit.nl.translate.TranslateRemoteModel
 import com.sailinghawklabs.speakfreely.domain.repository.SttRepository
 import com.sailinghawklabs.speakfreely.domain.repository.TtsRepository
 import com.sailinghawklabs.speakfreely.domain.repository.UserPreferencesRepository
-import com.sailinghawklabs.speakfreely.presentation.screen.util.UiText
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -78,7 +77,7 @@ class AppSplashViewModel(
         _state.update {
             it.copy(
                 statusLogs = it.statusLogs + SplashLogEntry(
-                    text = UiText.DynamicString(message),
+                    message = message,
                     severity = severity
                 )
             )

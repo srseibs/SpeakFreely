@@ -1,11 +1,11 @@
-package com.sailinghawklabs.speakfreely.presentation.screen
+package com.sailinghawklabs.speakfreely.presentation.screen.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sailinghawklabs.speakfreely.domain.model.Language
 import com.sailinghawklabs.speakfreely.domain.repository.SttRepository
 import com.sailinghawklabs.speakfreely.domain.repository.TtsRepository
 import com.sailinghawklabs.speakfreely.domain.repository.UserPreferencesRepository
-import com.sailinghawklabs.speakfreely.presentation.screen.main.MainState
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -67,9 +67,40 @@ class MainViewModel(
             }
 
             MainScreenEvent.PlayAudioClicked -> {
+                val currentState = _state.value
+                val textToSpeak = currentState.translatedText
+                if (textToSpeak.isNotBlank()) {
+                    playText(
+                        text = textToSpeak,
+                        language = currentState.targetLanguage,
+                        rate = currentState.playbackSpeed
+                    )
+                }
+            }
 
+            is MainScreenEvent.PlaybackSpeedChanged -> {
+                _state.update { it.copy(playbackSpeed = event.newSpeed) }
+            }
+
+            MainScreenEvent.ReverseTranslationClicked -> {
+                _state.value.detectedLanguage?.let { detected ->
+                    _state.update {
+                        it.copy(targetLanguage = detected)
+                    }
+                }
             }
         }
+    }
+
+    private fun playText(text: String, language: Language, rate: Float) {
+        viewModelScope.launch {
+            ttsRepository.speak(
+                text = text,
+                language = language,
+                speechRate = rate
+            )
+        }
+
     }
 
 }

@@ -185,7 +185,7 @@ fun AppSplashScreenContent(
                         LogSeverity.ERROR -> MaterialTheme.colorScheme.error
                     }
                     Text(
-                        text = log.text.asString(),
+                        text = log.message,
                         style = MaterialTheme.typography.labelMedium,
                         color = logColor,
                         modifier = Modifier.padding(vertical = 2.dp)

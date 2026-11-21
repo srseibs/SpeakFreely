@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
@@ -27,13 +28,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.sailinghawklabs.speakfreely.presentation.screen.MainScreenCommand
-import com.sailinghawklabs.speakfreely.presentation.screen.MainScreenEvent
-import com.sailinghawklabs.speakfreely.presentation.screen.MainViewModel
 import com.sailinghawklabs.speakfreely.presentation.screen.main.component.ReversalSection
 import com.sailinghawklabs.speakfreely.presentation.screen.main.component.SpeechCard
+import com.sailinghawklabs.speakfreely.presentation.screen.main.component.SpeechSlider
 import com.sailinghawklabs.speakfreely.presentation.screen.util.ObserveAsCommand
-import com.sailinghawklabs.speakfreely.presentation.screen.util.UiText
 import com.sailinghawklabs.speakfreely.presentation.theme.AppTheme
 import com.sailinghawklabs.speakfreely.presentation.theme.TextCream
 import org.koin.compose.viewmodel.koinViewModel
@@ -98,14 +96,22 @@ fun MainScreenContent(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.Center,
+                    .padding(32.dp),
+                verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // 1. Top Card (INPUT)
+                val inputSubtitle = when {
+                    state.isListening -> "Listening..."
+                    state.detectedLanguage != null ->
+                        "Detected: ${state.detectedLanguage.displayName} ${state.detectedLanguage.flagEmoji}"
+
+                    else -> "Tap Record to speak"
+                }
+
                 SpeechCard(
-                    headerTitle = UiText.DynamicString("INPUT"),
-                    headerSubtitle = UiText.DynamicString("Detected: ${state.inputLanguage.displayName} ${state.inputLanguage.flagEmoji}"),
+                    headerTitle = "INPUT",
+                    headerSubtitle = inputSubtitle,
                     text = state.inputText,
                     onTextChange = { text -> onEvent(MainScreenEvent.InputTextEdited(text)) },
                     containerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -114,23 +120,37 @@ fun MainScreenContent(
                 Spacer(modifier = Modifier.height(32.dp))
 
                 // 2. Middle Dynamic Reversal Button
-                ReversalSection(
-                    translationLanguage = state.inputLanguage,
-                    onReverseClicked = { }
-                )
-
-                Spacer(modifier = Modifier.height(32.dp))
+                if (state.showReversalButton && state.detectedLanguage != null) {
+                    ReversalSection(
+                        translationLanguage = state.detectedLanguage,
+                        onReverseClicked = { onEvent(MainScreenEvent.ReverseTranslationClicked) }
+                    )
+                    Spacer(modifier = Modifier.height(32.dp))
+                }
 
                 // 3. Bottom Card (TRANSLATION)
                 SpeechCard(
-                    headerTitle = UiText.DynamicString("TRANSLATION"),
-                    headerSubtitle = UiText.DynamicString("${state.targetLanguage.displayName} ${state.targetLanguage.flagEmoji}"),
+                    headerTitle = "TRANSLATION",
+                    headerSubtitle = "${state.targetLanguage.displayName} ${state.targetLanguage.flagEmoji}",
                     text = state.translatedText,
                     onTextChange = { text -> onEvent(MainScreenEvent.TranslationTextEdited(text)) },
                     containerColor = MaterialTheme.colorScheme.surface,
                     bottomActions = {
-                        Button(onClick = { onEvent(MainScreenEvent.PlayAudioClicked) }) {
-                            Text("▶ Play Audio")
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.End,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Button(onClick = { onEvent(MainScreenEvent.PlayAudioClicked) }) {
+                                Text("▶ Play Audio")
+                            }
+
+                            SpeechSlider(
+                                speechRate = state.playbackSpeed,
+                                onSpeechRateChange = { rate ->
+                                    onEvent(MainScreenEvent.PlaybackSpeedChanged(rate))
+                                }
+                            )
                         }
                     }
                 )

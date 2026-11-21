@@ -1,7 +1,5 @@
 package com.sailinghawklabs.speakfreely.presentation.screen.splash
 
-import com.sailinghawklabs.speakfreely.presentation.screen.util.UiText
-
 enum class LogSeverity {
     INFO,
     WARNING,
@@ -9,6 +7,6 @@ enum class LogSeverity {
 }
 
 data class SplashLogEntry(
-    val text: UiText,
+    val message: String,
     val severity: LogSeverity = LogSeverity.INFO
 )
