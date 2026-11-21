@@ -63,7 +63,7 @@ class AppSplashViewModel(
             warmUpSpeechRecognizer()
 
             updateStatus("Ready!", LogSeverity.INFO)
-            delay(500.milliseconds)
+            delay(300.milliseconds)
 
             _state.update { it.copy(isReady = true) }
             send(AppSplashScreenCommand.NavigateToMainScreen)
@@ -84,7 +84,7 @@ class AppSplashViewModel(
         }
 
         val dwellDuration = when (severity) {
-            LogSeverity.INFO -> 500.milliseconds
+            LogSeverity.INFO -> 300.milliseconds
             LogSeverity.WARNING -> 1200.milliseconds
             LogSeverity.ERROR -> 1800.milliseconds
         }
