@@ -126,8 +126,9 @@ fun ThemeSampleDisplay(
 
 @Preview
 @Composable
-private fun ThemeSampleDisplayDarkPrev() {
-    AppTheme(darkTheme = true) {
+private fun ThemeSamplePrev() {
+    AppTheme() {
         ThemeSampleDisplay()
     }
 }
+

@@ -34,19 +34,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.repeatOnLifecycle
 import com.sailinghawklabs.speakfreely.R
 import com.sailinghawklabs.speakfreely.presentation.screen.util.AudioPermissionHandler
 import com.sailinghawklabs.speakfreely.presentation.screen.util.AudioPermissionRationaleCard
+import com.sailinghawklabs.speakfreely.presentation.screen.util.ObserveAsCommand
 import com.sailinghawklabs.speakfreely.presentation.theme.AppTheme
 import com.sailinghawklabs.speakfreely.presentation.theme.TextCream
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -223,17 +218,5 @@ private fun Preview() {
                 isPermissionPermanentlyDenied = true
             ),
         )
-    }
-}
-
-@Composable
-fun <T> ObserveAsCommand(flow: Flow<T>, onCommand: suspend (T) -> Unit) {
-    val lifecycleOwner = LocalLifecycleOwner.current
-    LaunchedEffect(flow, lifecycleOwner.lifecycle) {
-        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            withContext(Dispatchers.Main.immediate) {
-                flow.collect(onCommand)
-            }
-        }
     }
 }

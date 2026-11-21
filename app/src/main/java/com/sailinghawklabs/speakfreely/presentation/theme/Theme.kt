@@ -1,15 +1,12 @@
 package com.sailinghawklabs.speakfreely.presentation.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 
-private val DarkColorScheme = darkColorScheme(
+private val MyDarkColorScheme = darkColorScheme(
     primary = CopperPrimary,
     onPrimary = CopperOnPrimary,
     primaryContainer = CopperPrimaryContainer,
@@ -42,7 +39,7 @@ private val DarkColorScheme = darkColorScheme(
     onErrorContainer = OnErrorContainerRed,
 )
 
-private val LightColorScheme = lightColorScheme(
+private val MyLightColorScheme = lightColorScheme(
     primary = CopperPrimary,
     onPrimary = CopperOnPrimary,
     primaryContainer = CopperOnPrimaryContainer,
@@ -65,19 +62,12 @@ private val LightColorScheme = lightColorScheme(
 
 @Composable
 fun AppTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    myColorScheme: ColorScheme = MyDarkColorScheme,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
-
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = myColorScheme,
         typography = AppTypography,
-    ) {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background,
-            content = content
-        )
-    }
+        content = content
+    )
 }
