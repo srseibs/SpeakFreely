@@ -1,5 +1,6 @@
 package com.sailinghawklabs.speakfreely.presentation.screen.main
 
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -7,8 +8,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
@@ -23,6 +27,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -87,16 +93,24 @@ fun MainScreenContent(
             )
         }
     ) { scaffoldPadding ->
+        val focusManager = LocalFocusManager.current
+        val scrollState = rememberScrollState()
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(scaffoldPadding)
                 .systemBarsPadding()
+                .pointerInput(Unit) {
+                    detectTapGestures { focusManager.clearFocus() }
+                }
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(32.dp),
+                    .imePadding()
+                    .verticalScroll(scrollState)
+                    .padding(24.dp),
                 verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -117,7 +131,7 @@ fun MainScreenContent(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant
                 )
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
                 // 2. Middle Dynamic Reversal Button
                 if (state.showReversalButton && state.detectedLanguage != null) {
@@ -125,7 +139,7 @@ fun MainScreenContent(
                         translationLanguage = state.detectedLanguage,
                         onReverseClicked = { onEvent(MainScreenEvent.ReverseTranslationClicked) }
                     )
-                    Spacer(modifier = Modifier.height(32.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
                 }
 
                 // 3. Bottom Card (TRANSLATION)
@@ -142,7 +156,10 @@ fun MainScreenContent(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Button(onClick = { onEvent(MainScreenEvent.PlayAudioClicked) }) {
-                                Text("▶ Play Audio")
+                                Text(
+                                    text = "▶ Play Audio",
+                                    style = MaterialTheme.typography.labelMedium
+                                )
                             }
 
                             SpeechSlider(
