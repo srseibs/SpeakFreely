@@ -11,11 +11,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -121,6 +125,20 @@ fun MainScreenContent(
                         "Detected: ${state.detectedLanguage.displayName} ${state.detectedLanguage.flagEmoji}"
 
                     else -> "Tap Record to speak"
+                }
+                Button(
+                    onClick = { onEvent(MainScreenEvent.MicButtonClicked) },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (state.isListening) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                    ),
+                    modifier = Modifier.padding(top = 16.dp)
+                ) {
+                    Icon(
+                        imageVector = if (state.isListening) Icons.Default.MicOff else Icons.Default.Mic,
+                        contentDescription = "Record Speech"
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(if (state.isListening) "Stop Listening" else "Tap to Record")
                 }
 
                 SpeechCard(

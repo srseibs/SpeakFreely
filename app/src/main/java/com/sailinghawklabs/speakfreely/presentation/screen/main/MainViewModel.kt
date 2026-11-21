@@ -3,17 +3,19 @@ package com.sailinghawklabs.speakfreely.presentation.screen.main
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sailinghawklabs.speakfreely.domain.model.Language
+import com.sailinghawklabs.speakfreely.domain.model.SpeechResult
 import com.sailinghawklabs.speakfreely.domain.repository.SttRepository
 import com.sailinghawklabs.speakfreely.domain.repository.TtsRepository
 import com.sailinghawklabs.speakfreely.domain.repository.UserPreferencesRepository
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
 
 class MainViewModel(
     private val repository: UserPreferencesRepository,
@@ -24,21 +26,43 @@ class MainViewModel(
     private val _state = MutableStateFlow(MainState())
 
     // Combine local UI state with repository.observe*() reactive Flow stream for real-time updates
-    val state =
-        _state
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5_000L),
-                initialValue = MainState()
+    val state: StateFlow<MainState> = combine(
+        _state,
+        sttRepository.observeSpeechResults()
+    ) { localState, speechResult ->
+        calculateState(localState, speechResult)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000L),
+        initialValue = MainState()
+    )
+
+    private fun calculateState(localState: MainState, speechResult: SpeechResult): MainState {
+        return when (speechResult) {
+            SpeechResult.Idle -> localState.copy(isListening = false)
+            SpeechResult.Listening -> localState.copy(isListening = true)
+            is SpeechResult.PartialResult -> localState.copy(
+                inputText = speechResult.text,
+                isListening = true
             )
 
+            is SpeechResult.FinalResult -> localState.copy(
+                inputText = speechResult.text,
+                isListening = false,
+                detectedLanguage = Language.fromBcp47Code(speechResult.detectedLanguageCode)
+                    ?: localState.detectedLanguage
+            )
+
+            is SpeechResult.Error -> localState.copy(
+                isListening = false
+            )
+        }
+    }
 
     init {
-        // ViewModel init runs ONCE per screen instance, preventing re-fetching when navigating back
         getOneShotData()
     }
 
-    // Handles the one-shot suspend repository fetches
     private fun getOneShotData() {
         viewModelScope.launch {
 
@@ -51,7 +75,6 @@ class MainViewModel(
     private fun send(cmd: MainScreenCommand) {
         viewModelScope.launch { _commands.send(cmd) }
     }
-
 
     fun onEvent(event: MainScreenEvent) {
         when (event) {
@@ -89,6 +112,16 @@ class MainViewModel(
                     }
                 }
             }
+
+            MainScreenEvent.MicButtonClicked -> {
+                if (_state.value.isListening) {
+                    sttRepository.stopListening()
+                } else {
+                    val currentLanguage =
+                        _state.value.detectedLanguage ?: Language.DEFAULT_TARGET_LANGUAGE
+                    sttRepository.startListening(currentLanguage)
+                }
+            }
         }
     }
 
@@ -100,7 +133,5 @@ class MainViewModel(
                 speechRate = rate
             )
         }
-
     }
-
 }
