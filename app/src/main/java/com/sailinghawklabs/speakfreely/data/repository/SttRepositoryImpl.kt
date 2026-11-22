@@ -59,8 +59,10 @@ class SttRepositoryImpl(
                 RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
             )
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, language.bcp47Code)
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, language.bcp47Code)
+            putExtra(RecognizerIntent.EXTRA_ONLY_RETURN_LANGUAGE_PREFERENCE, false)
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5)
         }
 
         _speechResults.value = SpeechResult.Listening

@@ -107,6 +107,61 @@ for **SpeakFreely**.
 * **Play Button (`▶`) Placement**: Positioned at bottom-right of `TRANSLATION` card, giving explicit
   user control over TTS audio playback.
 
+### 8. Symmetrical 2-Panel Architecture (`External` vs `Response`)
+
+* **Status**: Approved
+* **Category**: Presentation & Conversation Workspace Architecture
+* **The 2-Panel Model**:
+  - **Panel 1: `External`** (Dedicated to the Foreign Speaker; defaults to `⚡ Auto` ON).
+  - **Panel 2: `Response`** (Dedicated to the Phone Owner; defaults to `🔒 Locked` to
+    `ownerLanguage`).
+* **The 4-Rule Matrix per Panel**:
+  For each panel with **Language 1** (Spoken Input) and **Language 2** (Translated Output):
+  1. **Show Captured Text**: Rendered in **Language 1** with section-coupled `[ 🔊 Play Spoken ]`
+     button.
+  2. **Translate Captured Text**: Rendered in **Language 2** with section-coupled
+     `[ ▶ Play Translation │ ▼ ]` split button.
+  3. **Speak Captured Text**: Speaks out loud in **Language 1**.
+  4. **Speak Translated Text**: Speaks out loud in **Language 2**.
+* **Unified Language Control Pill**:
+  - `[ ⚡ Spanish 🇲🇽 ▼ ]` (combines active language, country flag emoji, and `⚡ Auto` / `🔒 Lock`
+    status in 1 control).
+* **Top-to-Bottom Mental Flow per Panel**:
+  - Header Record Button (`[ 🎙️ Record ]`) placed in top-right of panel header.
+  - Flows naturally down: **Record $\rightarrow$ Spoken Text $\rightarrow$ Translation
+    Text $\rightarrow$ Play Audio $\rightarrow$ Speed Dropdown**.
+* **Split Play Button (`[ ▶ Play Translation │ ▼ ]`)**:
+  - Tap `▶` button $\rightarrow$ Plays audio out loud immediately at current speed.
+  - Tap `▼` arrow $\rightarrow$ Opens compact dropdown menu containing $\pm 50\%$ speed slider.
+* **Text Editing Rules**:
+  - **Editing Spoken Text**: Re-triggers translation automatically so `translatedText` stays
+    synchronized.
+  - **Editing Translated Text**: Preserves manual user edit for TTS audio playback without
+    re-translating.
+  - **No Edit Icons**: Touch text directly to bring up IME; `[ ✕ Clear ]` button wipes text.
+* **Same-Language Optimization**:
+  - When `Language 1 == Language 2` (e.g. Panel 2 when both are English), ML Kit translation is
+    bypassed in 0ms and a single clean text box is rendered.
+
+### 9. Single Dark Theme Strategy (Rich Amber & Polished Copper)
+
+* **Status**: Approved
+* **Category**: Presentation / Theme Strategy
+* **Decision**: Embrace a dedicated **Dark Color Theme** (`DarkColorScheme`) across the entire
+  application without maintaining a separate light mode variation.
+* **Palette**:
+  - Primary: Warm Copper (`#D96B27`)
+  - Secondary: Amber Gold (`#E5A93C`)
+  - Background: Smoky Charcoal (`#140F0E`)
+  - Surface: Mahogany (`#201A18`) & Surface Variant (`#2C2320`)
+* **Benefits**:
+  - **OLED Battery Savings**: Substantially reduces battery consumption during continuous listening
+    and long presentation sessions.
+  - **High-Contrast Readability**: Cream text (`#F5ECE8`) on dark mahogany surfaces provides high
+    contrast in low-light environments (taxis, street markets, dark venues).
+  - **Single Source of Truth**: Eliminates theme switching bugs, color regressions, and dual-palette
+    maintenance.
+
 ---
 
 ## Use Cases & User Flows
@@ -219,6 +274,26 @@ for **SpeakFreely**.
     - Keyboard toggle affordance in UI.
     - Regional dialect locale selector (`Locale` variant support in STT and TTS engines).
 
+### Use Case 6: Live Dual-Column Closed Captions Mode (Lecture & Presentation Listening)
+
+* **Goal**: Provide a continuous, auto-scrolling dual-column caption feed for listening to foreign
+  speeches, lectures, presentations, tour guides, or foreign media without erasing previous
+  sentences.
+* **Actors**: Phone Owner listening to an ongoing foreign presentation, speech, or video.
+* **Workflow**:
+  1. User switches to the **Captions** tab via the Bottom Navigation Bar.
+  2. Foreign speech streams in continuously. Column 1 displays the live foreign transcript, and
+     Column 2 displays the real-time English translation.
+  3. The feed auto-scrolls down as new sentences arrive.
+  4. If the user wants to re-read a previous sentence, they tap **`PAUSE SCROLL`** to freeze the
+     viewport while background speech recognition and translation continue capturing and appending
+     new lines.
+  5. Tapping **`RESUME SCROLL`** smoothly auto-scrolls back to the latest incoming line.
+* **Key Technical Requirements**:
+  - `ConversationMode.LIVE_CLOSED_CAPTIONS` in `ConversationMode` enum.
+  - Capped rolling history buffer (`List<CaptionTurn>`, e.g., last 50 entries) to keep memory light.
+  - `LazyListState` auto-scroll control with viewport freeze toggle (`isScrollPaused`).
+
 ---
 
 ## Configuration & User Settings Specification
@@ -274,65 +349,85 @@ To support these use cases seamlessly, **SpeakFreely** requires the following pe
 
 ## Screen Architecture & Navigation Destinations
 
-The core navigation structure for **SpeakFreely** consists of three primary screens/destinations,
-supplemented by modal sheets:
+The core navigation structure for **SpeakFreely** uses a Material 3 **Bottom Navigation Bar**
+(`NavigationBar`) to switch between 3 specialized workspace tabs:
 
 ### 1. Splash Screen (`Destination.Splash`)
 
-* **Purpose**: Smooth app entry using Android 12+ `SplashScreen` API.
+* **Purpose**: Smooth app entry with animated radial gradient, sequential boot log, and permission
+  dance.
 * **Responsibilities**:
-  - Initializes DataStore preferences, Koin DI, and STT/TTS engine components.
-  - Checks microphone permissions (`RECORD_AUDIO`).
+  - Initializes DataStore preferences, Koin DI, TTS warm-up, and STT engine.
+  - Audits microphone permissions (`RECORD_AUDIO`).
   - Navigates automatically to `Destination.Main` once ready.
 
-### 2. Main Speech / Conversation Screen (`Destination.Main`)
+### 2. Main Workspace Tabs (`Destination.Main`)
 
-* **Purpose**: The central active workspace for real-time speech translation.
+#### Tab A: `Conversation` (Symmetrical 2-Panel Speech Workspace)
+
+* **Purpose**: Symmetrical 2-panel workspace for 1-on-1 conversations (`External` vs `Response`).
 * **Responsibilities**:
-  - Supports both **Turn-Taking** and **Hands-Free Continuous** modes via mode toggle.
-  - Top bar language selector pills (quick swap between `ownerLanguage` and `foreignInputLanguage`/
-    `foreignOutputLanguage`).
-  - Split display areas: Top card for `INPUT` (always Auto-Detecting), Bottom card for
-    `TRANSLATION`.
-  - Audio visualizer / Mic pulse indicator during active listening.
-  - Manual TTS audio replay buttons and text edit fallback (`TextField`).
-  - Navigation affordances to `Destination.Settings`.
+  - Panel 1 (`External`): Foreign Speaker panel with `[ ⚡ Spanish 🇲🇽 ▼ ]` language pill and
+    top-right `[ 🎙️ Record ]` button.
+  - Panel 2 (`Response`): Phone Owner panel with `[ 🔒 English 🇺🇸 ▼ ]` language pill and top-right
+    `[ 🎙️ Record ]` button.
+  - Section-Coupled Play Buttons: `[ 🔊 Play Spoken ]` inside Spoken box, and
+    `[ ▶ Play Translation │ ▼ ]` split button inside Translation box.
+  - Split Speed Dropdown: Tapping `▶` plays audio immediately; tapping `▼` opens the $\pm 50\%$
+    speed slider dropdown menu.
 
 #### ASCII UI Wireframe:
 
 ```text
-===============================================================
-  SpeakFreely                                              ⚙️
-===============================================================
+========================================================================
+  SpeakFreely                                                       ⚙️
+========================================================================
 
-  ┌─────────────────────────────────────────────────────────┐
-  │ INPUT · Auto-detecting language into English...         │
-  │─────────────────────────────────────────────────────────│
-  │                                                         │
-  │  "That looks very good!"                                │
-  │                                                         │
-  │  (Tap text to edit)                [ ⌨️ ] [ 🎙️ Mute Mic ]│
-  └─────────────────────────────────────────────────────────┘
+  ┌──────────────────────────────────────────────────────────────────┐
+  │ EXTERNAL · [ ⚡ Spanish 🇲🇽 ▼ ]                  [ 🎙️ Record ]     │
+  │──────────────────────────────────────────────────────────────────│
+  │ Spoken (Spanish 🇲🇽):                                             │
+  │ "¿Dónde está la estación de tren más cercana?"            [ ✕ ]   │
+  │                                           [ 🔊 Play Spoken 🇲🇽 ] │
+  │──────────────────────────────────────────────────────────────────│
+  │ Translation (English 🇺🇸):                                        │
+  │ "Where is the nearest train station?"                     [ ✕ ]   │
+  │                                      [ ▶ Play Translation │ ▼ ] │
+  └──────────────────────────────────────────────────────────────────┘
 
-            [ ⇄ Set TRANSLATION to English (US) ]
+  ┌──────────────────────────────────────────────────────────────────┐
+  │ RESPONSE · [ 🔒 English 🇺🇸 ▼ ]                  [ 🎙️ Record ]     │
+  │──────────────────────────────────────────────────────────────────│
+  │ Spoken (English 🇺🇸):                                             │
+  │ "Go straight for two blocks, then turn left."             [ ✕ ]   │
+  │                                           [ 🔊 Play Spoken 🇺🇸 ] │
+  │──────────────────────────────────────────────────────────────────│
+  │ Translation (Spanish 🇲🇽):                                        │
+  │ "Vaya derecho dos cuadras y luego gire a la izquierda."   [ ✕ ]   │
+  │                                      [ ▶ Play Translation │ ▼ ] │
+  └──────────────────────────────────────────────────────────────────┘
 
-  ┌─────────────────────────────────────────────────────────┐
-  │ TRANSLATION · Spanish (MX)                              │
-  │─────────────────────────────────────────────────────────│
-  │                                                         │
-  │  "¡Eso se ve muy bien!"                                 │
-  │                                                         │
-  │  (Tap text to edit)                   [ 📋 ]  [ ▶ Play ]│
-  └─────────────────────────────────────────────────────────┘
-
-===============================================================
-  Mode: [ Tap to Record | [* Continuous *] ]
-===============================================================
+========================================================================
 ```
 
-### 3. Settings Screen (`Destination.Settings`)
+#### Tab B: `Captions` (Live Dual-Column Closed Captions)
 
+* **Purpose**: Continuous scrolling caption feed for foreign speeches, lectures, presentations, and
+  tour guides.
+* **Responsibilities**:
+  - Column 1: Live Foreign Speech Transcript.
+  - Column 2: Real-Time English Translation.
+  - Auto-scroll with **`PAUSE SCROLL`** viewport freeze button.
+  - Capped 50-line rolling buffer.
+
+#### Tab C: `Settings` (`Destination.Settings`)
 * **Purpose**: Comprehensive configuration hub for audio, engine, and UI preferences.
+* **Responsibilities**:
+  - Default language & BCP-47 regional dialect selectors.
+  - VAD silence pause threshold slider (0.8s – 1.8s).
+  - TTS speech rate slider.
+  - Offline Model Download Manager (view/download/delete ML Kit language packs ~30 MB).
+  - Cloud vs Offline engine priority toggle.
 * **Responsibilities**:
   - Primary & Secondary language & BCP-47 regional dialect selectors.
   - VAD silence pause threshold slider (0.8s – 1.8s).
@@ -359,13 +454,7 @@ supplemented by modal sheets:
   codes (e.g., `"en-US"`, `"es-ES"`) rather than bare strings, ensuring Text-to-Speech (TTS) and
   translation services have exact language metadata.
 
-### 2. Dependency Injection & Networking Evaluation
-
-* **Category**: Architecture & Dependencies
-* **Concept**: Evaluating **Koin** (runtime DSL, no KSP annotation processing) and **Ktor Client**
-  (lightweight, KMP-ready) alongside Hilt and Retrofit.
-
-### 3. Recent Languages Stack & History Popup Menu
+### 2. Recent Languages Stack & History Popup Menu
 
 * **Category**: UI & State Management
 * **Intended Use**: Primary intended use is for **TRANSLATION language "go back" / Undo**. If an
@@ -381,6 +470,10 @@ supplemented by modal sheets:
 
 ## Revision Log
 
+* **2026-10-14**: Added Approved Decision 8: Symmetrical 2-Panel Architecture (`External` vs
+  `Response`), 4-Rule Matrix per panel, and same-language 0ms bypass optimization.
+* **2026-10-14**: Added Use Case 6: Live Dual-Column Closed Captions Mode and 3-Tab Bottom
+  Navigation Bar Architecture.
 * **2026-10-14**: Added Recent Languages Stack & History Popup Menu under Ideas Under Discussion.
 * **2026-10-14**: Updated Decision 7 & ASCII Wireframe (Zero top bar, INPUT Always Auto-Detect,
   TRANSLATION card, Dynamic `Set TRANSLATION` button).

@@ -16,9 +16,11 @@ val viewModelDiModule = module {
 
     viewModel {
         MainViewModel(
-            repository = get(),
+            userPrefRepository = get(),
             ttsRepository = get(),
-            sttRepository = get()
+            sttRepository = get(),
+            translationRepository = get(),
+            languageIdentifierRepository = get()
         )
     }
 }
