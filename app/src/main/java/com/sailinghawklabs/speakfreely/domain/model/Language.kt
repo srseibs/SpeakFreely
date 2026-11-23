@@ -17,7 +17,17 @@ data class Language(
 
         fun fromBcp47Code(bcp47Code: String?): Language? {
             if (bcp47Code.isNullOrBlank()) return null
-            val locale = Locale.forLanguageTag(bcp47Code)
+            var locale = Locale.forLanguageTag(bcp47Code)
+
+            // If country is empty (e.g., "fr", "de", "es"), query Java system locales for primary country!
+            if (locale.country.isBlank()) {
+                val primaryCountry = Locale.getAvailableLocales()
+                                         .firstOrNull { it.language == locale.language && it.country.isNotBlank() }
+                                         ?.country ?: ""
+                if (primaryCountry.isNotBlank()) {
+                    locale = Locale(locale.language, primaryCountry)
+                }
+            }
 
             val displayName =
                 locale.displayLanguage.replaceFirstChar { it.uppercase() }.ifBlank { bcp47Code }
@@ -57,4 +67,13 @@ object SupportedLanguages {
         Language.fromBcp47Code("nl-NL"),
         Language.fromBcp47Code("ko-KR")
     ).distinctBy { it.bcp47Code }
+
+
+    // All 50+ languages supported by Google ML Kit!
+    val ALL: List<Language> by lazy {
+        com.google.mlkit.nl.translate.TranslateLanguage.getAllLanguages()
+            .mapNotNull { code -> Language.fromBcp47Code(code) }
+            .distinctBy { it.bcp47Code }
+            .sortedBy { it.displayName }
+    }
 }

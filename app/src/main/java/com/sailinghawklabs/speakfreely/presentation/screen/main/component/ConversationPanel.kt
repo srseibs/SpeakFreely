@@ -96,6 +96,7 @@ fun ConversationPanel(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             // 1. Header Row (Panel Title + Top-Right Mic Record Button)
+            // ============================================================
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -110,10 +111,13 @@ fun ConversationPanel(
                 // Top-Right Mic Record Button
                 Button(
                     onClick = onMicClick,
-                    modifier = Modifier.height(36.dp),
+                    modifier = Modifier.height(30.dp),
                     contentPadding = PaddingValues(horizontal = 14.dp, vertical = 0.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (panelState.isListening) recButtonColor else MaterialTheme.colorScheme.primary
+                        containerColor = if (panelState.isListening)
+                            recButtonColor
+                        else
+                            MaterialTheme.colorScheme.primary
                     )
                 ) {
                     if (panelState.isListening) {
@@ -133,7 +137,8 @@ fun ConversationPanel(
                     } else {
                         Icon(
                             imageVector = Icons.Default.Mic,
-                            contentDescription = "Record"
+                            contentDescription = "Record",
+                            modifier = Modifier.size(22.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
@@ -144,19 +149,20 @@ fun ConversationPanel(
                 }
             }
 
-            Spacer(modifier = Modifier.height(2.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             // 2. Spoken Section (Shaded Inner Surface Box)
+            // ============================================================
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f)
+                color = MaterialTheme.colorScheme.surfaceContainer.copy(0.4f)
             ) {
                 Column(
                     modifier = Modifier.padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Spoken Header Row (Label + Language Pill on Left, Play Button on Right)
+                    // Spoken Header Row (Label + Language Pill on Left, Play Button on Right!)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -175,7 +181,7 @@ fun ConversationPanel(
                             // Spoken Language Control Pill
                             Surface(
                                 onClick = onSpokenLanguageClick,
-                                modifier = Modifier.height(36.dp),
+                                modifier = Modifier.height(30.dp),
                                 shape = CircleShape,
                                 color = MaterialTheme.colorScheme.primaryContainer,
                                 tonalElevation = 3.dp
@@ -199,7 +205,7 @@ fun ConversationPanel(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Button(
                                     onClick = onPlaySpokenClick,
-                                    modifier = Modifier.height(36.dp),
+                                    modifier = Modifier.height(30.dp),
                                     contentPadding = PaddingValues(
                                         horizontal = 14.dp,
                                         vertical = 0.dp
@@ -221,7 +227,7 @@ fun ConversationPanel(
                                     onClick = { showSpokenSpeedMenu = true },
                                     modifier = Modifier
                                         .padding(start = 1.dp)
-                                        .height(36.dp),
+                                        .height(30.dp),
                                     shape = RoundedCornerShape(
                                         topStart = 0.dp,
                                         bottomStart = 0.dp,
@@ -291,61 +297,100 @@ fun ConversationPanel(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // 3. Translation Section (Shaded Inner Surface Box)
+            // 3. Translation Section Header (ALWAYS VISIBLE so target language can be changed anytime!)
+            // ============================================================
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Translation:",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+
+                    // Translation Language Control Pill (Always visible!)
+                    Surface(
+                        onClick = onTranslationLanguageClick,
+                        modifier = Modifier.height(30.dp),
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        tonalElevation = 3.dp
+                    ) {
+                        val targetLanguage = panelState.targetLanguage
+                        Box(
+                            modifier = Modifier.padding(horizontal = 12.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "${targetLanguage.displayName} ${targetLanguage.flagEmoji} ▼",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+                }
+            }
+
+            // 4. Translation Text & Play Area (Only shown if languages are DIFFERENT!)
+            // ============================================================
             if (!panelState.isSameLanguage) {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+                    color = MaterialTheme.colorScheme.surfaceContainer.copy(0.4f)
                 ) {
                     Column(
                         modifier = Modifier.padding(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        // Translation Header Row
-                        Row(
+                        // Translation Text Field
+                        OutlinedTextField(
+                            value = panelState.translatedText,
+                            onValueChange = { newText ->
+                                val sanitized = newText.replace("\n", " ").replace("\r", " ")
+                                onTranslationTextChange(sanitized)
+                            },
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Text(
-                                    text = "Translation:",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-
-                                // Translation Language Control Pill
-                                Surface(
-                                    onClick = onTranslationLanguageClick,
-                                    modifier = Modifier.height(36.dp),
-                                    shape = CircleShape,
-                                    color = MaterialTheme.colorScheme.secondaryContainer,
-                                    tonalElevation = 3.dp
-                                ) {
-                                    val targetLanguage = panelState.targetLanguage
-                                    Box(
-                                        modifier = Modifier.padding(horizontal = 12.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = "${targetLanguage.displayName} ${targetLanguage.flagEmoji} ▼",
-                                            style = MaterialTheme.typography.labelMedium,
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                            shape = RoundedCornerShape(10.dp),
+                            textStyle = MaterialTheme.typography.bodyLarge,
+                            placeholder = { Text("Translation...") },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = Color.Transparent,
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent
+                            ),
+                            trailingIcon = {
+                                if (panelState.translatedText.isNotEmpty()) {
+                                    IconButton(onClick = { onTranslationTextChange("") }) {
+                                        Icon(
+                                            imageVector = Icons.Default.Clear,
+                                            contentDescription = "Clear Translation Text",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                                alpha = 0.6f
+                                            )
                                         )
                                     }
                                 }
                             }
+                        )
 
-                            // Right-Aligned Translation Section Split Play Button + Speed Dropdown
+                        // Translation Section Split Play Button + Speed Dropdown
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
                             Box {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Button(
                                         onClick = onPlayTranslationClick,
-                                        modifier = Modifier.height(36.dp),
+                                        modifier = Modifier.height(30.dp),
                                         contentPadding = PaddingValues(
                                             horizontal = 14.dp,
                                             vertical = 0.dp
@@ -367,7 +412,7 @@ fun ConversationPanel(
                                         onClick = { showTranslationSpeedMenu = true },
                                         modifier = Modifier
                                             .padding(start = 1.dp)
-                                            .height(36.dp),
+                                            .height(30.dp),
                                         shape = RoundedCornerShape(
                                             topStart = 0.dp,
                                             bottomStart = 0.dp,
@@ -402,38 +447,6 @@ fun ConversationPanel(
                                 }
                             }
                         }
-
-                        // Translation Text Field
-                        OutlinedTextField(
-                            value = panelState.translatedText,
-                            onValueChange = { newText ->
-                                val sanitized = newText.replace("\n", " ").replace("\r", " ")
-                                onTranslationTextChange(sanitized)
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(10.dp),
-                            textStyle = MaterialTheme.typography.bodyLarge,
-                            placeholder = { Text("Translation...") },
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                unfocusedBorderColor = Color.Transparent,
-                                focusedContainerColor = Color.Transparent,
-                                unfocusedContainerColor = Color.Transparent
-                            ),
-                            trailingIcon = {
-                                if (panelState.translatedText.isNotEmpty()) {
-                                    IconButton(onClick = { onTranslationTextChange("") }) {
-                                        Icon(
-                                            imageVector = Icons.Default.Clear,
-                                            contentDescription = "Clear Translation Text",
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                                                alpha = 0.6f
-                                            )
-                                        )
-                                    }
-                                }
-                            }
-                        )
                     }
                 }
             }

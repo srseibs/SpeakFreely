@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class MainViewModel(
@@ -34,7 +35,11 @@ class MainViewModel(
         _state,
         sttRepository.observeSpeechResults().onEach { speechResult ->
             if (speechResult is SpeechResult.FinalResult && speechResult.text.isNotBlank()) {
-                triggerTranslation(speechResult.text)
+                val activePanel = if (_state.value.externalPanel.isListening)
+                    PanelTarget.EXTERNAL
+                else
+                    PanelTarget.RESPONSE
+                triggerTranslation(activePanel, speechResult.text)
             }
         }
     ) { localState, speechResult ->
@@ -46,7 +51,60 @@ class MainViewModel(
     )
 
     private fun calculateState(localState: MainState, speechResult: SpeechResult): MainState {
-        return MainState()
+        return when (speechResult) {
+            SpeechResult.Idle -> localState.copy(
+                externalPanel = localState.externalPanel.copy(isListening = false),
+                responsePanel = localState.responsePanel.copy(isListening = false)
+            )
+
+            SpeechResult.Listening -> {
+                if (localState.externalPanel.isListening) {
+                    localState.copy(externalPanel = localState.externalPanel.copy(isListening = true))
+                } else if (localState.responsePanel.isListening) {
+                    localState.copy(responsePanel = localState.responsePanel.copy(isListening = true))
+                } else {
+                    localState
+                }
+            }
+
+            is SpeechResult.PartialResult -> {
+                if (localState.externalPanel.isListening) {
+                    localState.copy(externalPanel = localState.externalPanel.copy(spokenText = speechResult.text))
+                } else if (localState.responsePanel.isListening) {
+                    localState.copy(responsePanel = localState.responsePanel.copy(spokenText = speechResult.text))
+                } else {
+                    localState
+                }
+            }
+
+            is SpeechResult.FinalResult -> {
+                if (localState.externalPanel.isListening) {
+                    localState.copy(
+                        externalPanel = localState.externalPanel.copy(
+                            spokenText = speechResult.text,
+                            isListening = false
+                        )
+                    )
+                } else if (localState.responsePanel.isListening) {
+                    localState.copy(
+                        responsePanel = localState.responsePanel.copy(
+                            spokenText = speechResult.text,
+                            isListening = false
+                        )
+                    )
+                } else {
+                    localState.copy(
+                        externalPanel = localState.externalPanel.copy(isListening = false),
+                        responsePanel = localState.responsePanel.copy(isListening = false)
+                    )
+                }
+            }
+
+            is SpeechResult.Error -> localState.copy(
+                externalPanel = localState.externalPanel.copy(isListening = false),
+                responsePanel = localState.responsePanel.copy(isListening = false)
+            )
+        }
     }
 
     init {
@@ -59,24 +117,48 @@ class MainViewModel(
         }
     }
 
-    private fun triggerTranslation(text: String) {
+    private fun triggerTranslation(target: PanelTarget, text: String) {
         if (text.isBlank()) {
-
+            updatePanel(target) { panel -> panel.copy(translatedText = "") }
             return
         }
 
         viewModelScope.launch {
-            // 1. Identify the language on-device in ~10ms
-            val detectedCode = languageIdentifierRepository.identifyLanguage(text)
-            val detectedLang =
-                Language.fromBcp47Code(detectedCode) ?: Language.DEFAULT_TARGET_LANGUAGE
+            val currentPanel = if (target == PanelTarget.EXTERNAL)
+                _state.value.externalPanel
+            else
+                _state.value.responsePanel
 
-            // 2. Update state with the identified language
+            // 1. On EXTERNAL panel: Identify foreign language in ~10ms if Auto-Detect is enabled
+            val sourceLang =
+                if (target == PanelTarget.EXTERNAL && currentPanel.isAutoDetectEnabled) {
+                    val detectedCode = languageIdentifierRepository.identifyLanguage(text)
+                    val lang = Language.fromBcp47Code(detectedCode) ?: currentPanel.spokenLanguage
 
+                    // Automatically sync foreign language across BOTH panels!
+                    _state.update { state ->
+                        state.copy(
+                            externalPanel = state.externalPanel.copy(spokenLanguage = lang),
+                            responsePanel = state.responsePanel.copy(targetLanguage = lang)
+                        )
+                    }
+                    lang
+                } else {
+                    currentPanel.spokenLanguage
+                }
 
-            // 3. Translate from detected language -> targetLanguage (Owner language)
+            val targetLang = currentPanel.targetLanguage
 
+            // 2. Perform ML Kit Translation
+            val result = translationRepository.translate(
+                text = text,
+                sourceLanguage = sourceLang,
+                targetLanguage = targetLang
+            )
 
+            result.getOrNull()?.let { translated ->
+                updatePanel(target) { panel -> panel.copy(translatedText = translated) }
+            }
         }
     }
 
@@ -89,17 +171,85 @@ class MainViewModel(
 
     fun onEvent(event: MainScreenEvent) {
         when (event) {
+
             is MainScreenEvent.GoToSettings ->
                 send(MainScreenCommand.NavigateToSettings)
 
+            is MainScreenEvent.SpokenTextEdited -> {
+                updatePanel(event.panel) { panel ->
+                    panel.copy(spokenText = event.newText)
+                }
+                triggerTranslation(event.panel, event.newText)
+            }
 
             is MainScreenEvent.TranslationTextEdited -> {
-
+                updatePanel(event.panel) { panel ->
+                    panel.copy(translatedText = event.newText)
+                }
             }
+
+            is MainScreenEvent.SpokenSpeedChanged -> {
+                updatePanel(event.panel) { panel ->
+                    panel.copy(spokenPlaybackSpeed = event.newSpeed)
+                }
+            }
+
+            is MainScreenEvent.TranslationSpeedChanged -> {
+                updatePanel(event.panel) { panel ->
+                    panel.copy(translatedPlaybackSpeed = event.newSpeed)
+                }
+            }
+
+            is MainScreenEvent.AutoDetectToggled -> {
+                updatePanel(event.panel) { panel ->
+                    panel.copy(isAutoDetectEnabled = event.enabled)
+                }
+            }
+
+            is MainScreenEvent.SpokenLanguageSelected -> {
+                updatePanel(event.panel) { panel ->
+                    panel.copy(
+                        spokenLanguage = event.newLanguage,
+                        isAutoDetectEnabled = false // Lock when manually picked
+                    )
+                }
+                triggerTranslation(
+                    event.panel,
+                    if (event.panel == PanelTarget.EXTERNAL) _state.value.externalPanel.spokenText else _state.value.responsePanel.spokenText
+                )
+            }
+
+            is MainScreenEvent.TargetLanguageSelected -> {
+                updatePanel(event.panel) { panel ->
+                    panel.copy(targetLanguage = event.newLanguage)
+                }
+                triggerTranslation(
+                    event.panel,
+                    if (event.panel == PanelTarget.EXTERNAL) _state.value.externalPanel.spokenText else _state.value.responsePanel.spokenText
+                )
+            }
+
 
             else -> {}
 
 
+        }
+    }
+
+    private fun updatePanel(
+        target: PanelTarget,
+        updateBlock: (PanelState) -> PanelState
+    ) {
+        _state.update { currentState ->
+            when (target) {
+                PanelTarget.EXTERNAL -> currentState.copy(
+                    externalPanel = updateBlock(currentState.externalPanel)
+                )
+
+                PanelTarget.RESPONSE -> currentState.copy(
+                    responsePanel = updateBlock(currentState.responsePanel)
+                )
+            }
         }
     }
 

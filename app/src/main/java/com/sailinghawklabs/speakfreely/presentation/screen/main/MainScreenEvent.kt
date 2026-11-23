@@ -24,6 +24,10 @@ sealed interface MainScreenEvent {
     data class TranslationSpeedChanged(val panel: PanelTarget, val newSpeed: Float) :
         MainScreenEvent
 
-    data class LanguageSelected(val panel: PanelTarget, val newLanguage: Language) : MainScreenEvent
+    data class SpokenLanguageSelected(val panel: PanelTarget, val newLanguage: Language) :
+        MainScreenEvent
+
+    data class TargetLanguageSelected(val panel: PanelTarget, val newLanguage: Language) :
+        MainScreenEvent
     data class AutoDetectToggled(val panel: PanelTarget, val enabled: Boolean) : MainScreenEvent
 }
