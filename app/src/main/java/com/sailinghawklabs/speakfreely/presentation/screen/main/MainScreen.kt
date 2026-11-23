@@ -4,22 +4,14 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -38,9 +30,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.sailinghawklabs.speakfreely.presentation.screen.main.component.ReversalSection
-import com.sailinghawklabs.speakfreely.presentation.screen.main.component.SpeechCard
-import com.sailinghawklabs.speakfreely.presentation.screen.main.component.SpeechSlider
 import com.sailinghawklabs.speakfreely.presentation.screen.util.ObserveAsCommand
 import com.sailinghawklabs.speakfreely.presentation.theme.AppTheme
 import com.sailinghawklabs.speakfreely.presentation.theme.TextCream
@@ -118,77 +107,7 @@ fun MainScreenContent(
                 verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // 1. Top Card (INPUT)
-                val inputSubtitle = when {
-                    state.isListening -> "Listening..."
-                    state.detectedLanguage != null ->
-                        "Detected: ${state.detectedLanguage.displayName} ${state.detectedLanguage.flagEmoji}"
 
-                    else -> "Tap Record to speak"
-                }
-                Button(
-                    onClick = { onEvent(MainScreenEvent.MicButtonClicked) },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (state.isListening) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-                    ),
-                    modifier = Modifier.padding(top = 16.dp)
-                ) {
-                    Icon(
-                        imageVector = if (state.isListening) Icons.Default.MicOff else Icons.Default.Mic,
-                        contentDescription = "Record Speech"
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(if (state.isListening) "Stop Listening" else "Tap to Record")
-                }
-
-                SpeechCard(
-                    headerTitle = "INPUT",
-                    headerSubtitle = inputSubtitle,
-                    text = state.inputText,
-                    onTextChange = { text -> onEvent(MainScreenEvent.InputTextEdited(text)) },
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // 2. Middle Dynamic Reversal Button
-                if (state.showReversalButton && state.detectedLanguage != null) {
-                    ReversalSection(
-                        translationLanguage = state.detectedLanguage,
-                        onReverseClicked = { onEvent(MainScreenEvent.ReverseTranslationClicked) }
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                }
-
-                // 3. Bottom Card (TRANSLATION)
-                SpeechCard(
-                    headerTitle = "TRANSLATION",
-                    headerSubtitle = "${state.targetLanguage.displayName} ${state.targetLanguage.flagEmoji}",
-                    text = state.translatedText,
-                    onTextChange = { text -> onEvent(MainScreenEvent.TranslationTextEdited(text)) },
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    bottomActions = {
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalAlignment = Alignment.End,
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Button(onClick = { onEvent(MainScreenEvent.PlayAudioClicked) }) {
-                                Text(
-                                    text = "▶ Play Audio",
-                                    style = MaterialTheme.typography.labelMedium
-                                )
-                            }
-
-                            SpeechSlider(
-                                speechRate = state.playbackSpeed,
-                                onSpeechRateChange = { rate ->
-                                    onEvent(MainScreenEvent.PlaybackSpeedChanged(rate))
-                                }
-                            )
-                        }
-                    }
-                )
             }
         }
     }
@@ -200,8 +119,7 @@ private fun Preview() {
     AppTheme {
         MainScreenContent(
             state = MainState(
-                inputText = "¿Dónde está la estación de tren más cercana?",
-                translatedText = "Where is the nearest train station?"
+
             ),
             onEvent = {}
         )

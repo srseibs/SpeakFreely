@@ -17,7 +17,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class MainViewModel(
@@ -47,25 +46,7 @@ class MainViewModel(
     )
 
     private fun calculateState(localState: MainState, speechResult: SpeechResult): MainState {
-        return when (speechResult) {
-            SpeechResult.Idle -> localState.copy(isListening = false)
-            SpeechResult.Listening -> localState.copy(isListening = true)
-            is SpeechResult.PartialResult -> localState.copy(
-                inputText = speechResult.text,
-                isListening = true
-            )
-
-            is SpeechResult.FinalResult -> localState.copy(
-                inputText = speechResult.text,
-                isListening = false,
-                detectedLanguage = Language.fromBcp47Code(speechResult.detectedLanguageCode)
-                    ?: localState.detectedLanguage
-            )
-
-            is SpeechResult.Error -> localState.copy(
-                isListening = false
-            )
-        }
+        return MainState()
     }
 
     init {
@@ -80,7 +61,7 @@ class MainViewModel(
 
     private fun triggerTranslation(text: String) {
         if (text.isBlank()) {
-            _state.update { it.copy(translatedText = "", detectedLanguage = null) }
+
             return
         }
 
@@ -91,20 +72,11 @@ class MainViewModel(
                 Language.fromBcp47Code(detectedCode) ?: Language.DEFAULT_TARGET_LANGUAGE
 
             // 2. Update state with the identified language
-            _state.update { it.copy(detectedLanguage = detectedLang) }
+
 
             // 3. Translate from detected language -> targetLanguage (Owner language)
-            val targetLang = _state.value.targetLanguage
 
-            val result = translationRepository.translate(
-                text = text,
-                sourceLanguage = detectedLang,
-                targetLanguage = targetLang
-            )
 
-            result.getOrNull()?.let { translated ->
-                _state.update { it.copy(translatedText = translated) }
-            }
         }
     }
 
@@ -120,51 +92,14 @@ class MainViewModel(
             is MainScreenEvent.GoToSettings ->
                 send(MainScreenCommand.NavigateToSettings)
 
-            is MainScreenEvent.InputTextEdited -> {
-                _state.update { it.copy(inputText = event.newText) }
-                if (event.newText.isBlank()) {
-                    sttRepository.stopListening()
-                }
-                triggerTranslation(event.newText)
-            }
 
             is MainScreenEvent.TranslationTextEdited -> {
-                _state.update { it.copy(translatedText = event.newText) }
+
             }
 
-            MainScreenEvent.PlayAudioClicked -> {
-                val currentState = _state.value
-                val textToSpeak = currentState.translatedText
-                if (textToSpeak.isNotBlank()) {
-                    playText(
-                        text = textToSpeak,
-                        language = currentState.targetLanguage,
-                        rate = currentState.playbackSpeed
-                    )
-                }
-            }
+            else -> {}
 
-            is MainScreenEvent.PlaybackSpeedChanged -> {
-                _state.update { it.copy(playbackSpeed = event.newSpeed) }
-            }
 
-            MainScreenEvent.ReverseTranslationClicked -> {
-                _state.value.detectedLanguage?.let { detected ->
-                    _state.update {
-                        it.copy(targetLanguage = detected)
-                    }
-                }
-            }
-
-            MainScreenEvent.MicButtonClicked -> {
-                if (_state.value.isListening) {
-                    sttRepository.stopListening()
-                } else {
-                    val currentLanguage =
-                        _state.value.detectedLanguage ?: Language.DEFAULT_TARGET_LANGUAGE
-                    sttRepository.startListening(currentLanguage)
-                }
-            }
         }
     }
 

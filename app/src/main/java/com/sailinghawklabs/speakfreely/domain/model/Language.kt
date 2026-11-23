@@ -41,3 +41,20 @@ data class Language(
         }
     }
 }
+
+object SupportedLanguages {
+    val POPULAR = listOfNotNull(
+        Language.fromBcp47Code("en-US"),
+        Language.fromBcp47Code("es-MX"),
+        Language.fromBcp47Code("fr-FR"),
+        Language.fromBcp47Code("de-DE"),
+        Language.fromBcp47Code("ja-JP"),
+        Language.fromBcp47Code("it-IT"),
+        Language.fromBcp47Code("zh-CN"),
+        Language.fromBcp47Code("pt-BR"),
+        Language.fromBcp47Code("ru-RU"),
+        Language.fromBcp47Code("ar-SA"),
+        Language.fromBcp47Code("nl-NL"),
+        Language.fromBcp47Code("ko-KR")
+    ).distinctBy { it.bcp47Code }
+}
