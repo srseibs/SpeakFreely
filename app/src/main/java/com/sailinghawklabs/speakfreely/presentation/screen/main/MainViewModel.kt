@@ -10,6 +10,7 @@ import com.sailinghawklabs.speakfreely.domain.repository.TranslationRepository
 import com.sailinghawklabs.speakfreely.domain.repository.TtsRepository
 import com.sailinghawklabs.speakfreely.domain.repository.UserPreferencesRepository
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -32,13 +33,7 @@ class MainViewModel(
 
     val state: StateFlow<MainState> = combine(
         _state,
-        sttRepository.observeSpeechResults().onEach { speechResult ->
-            if (speechResult is SpeechResult.FinalResult && speechResult.text.isNotBlank()) {
-                val activeTarget =
-                    if (_state.value.activeMic != TalkerTarget.NONE) _state.value.activeMic else TalkerTarget.TOP
-                triggerTranslation(activeTarget, speechResult.text)
-            }
-        }
+        observeSpeechResultsStream()
     ) { localState, speechResult ->
         calculateState(localState, speechResult)
     }.stateIn(
@@ -46,6 +41,19 @@ class MainViewModel(
         started = SharingStarted.WhileSubscribed(5_000L),
         initialValue = MainState()
     )
+
+    private fun observeSpeechResultsStream(): Flow<SpeechResult> {
+        return sttRepository.observeSpeechResults().onEach { speechResult ->
+            if (speechResult is SpeechResult.FinalResult && speechResult.text.isNotBlank()) {
+                val activeTarget = if (_state.value.activeMic != TalkerTarget.NONE) {
+                    _state.value.activeMic
+                } else {
+                    TalkerTarget.TOP
+                }
+                triggerTranslation(activeTarget, speechResult.text)
+            }
+        }
+    }
 
     private fun calculateState(
         localState: MainState,
@@ -112,7 +120,7 @@ class MainViewModel(
                         state.copy(
                             topCard = state.topCard.copy(language = lang)
                         )
-                    }
+                }
                     lang
                 } else {
                     sourceCard.language
