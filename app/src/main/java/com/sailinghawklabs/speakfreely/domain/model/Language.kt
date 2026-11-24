@@ -25,7 +25,10 @@ data class Language(
                                          .firstOrNull { it.language == locale.language && it.country.isNotBlank() }
                                          ?.country ?: ""
                 if (primaryCountry.isNotBlank()) {
-                    locale = Locale(locale.language, primaryCountry)
+                    locale = Locale.Builder()
+                        .setLanguage(locale.language)
+                        .setRegion(primaryCountry)
+                        .build()
                 }
             }
 
