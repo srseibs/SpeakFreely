@@ -9,9 +9,16 @@ data class LanguageCardState(
     val isAutoDetectEnabled: Boolean = false
 )
 
-enum class CardPosition {
-    TOP,   // Top Card & Top Mic (Foreigner)
-    BOTTOM // Bottom Card & Bottom Mic (Phone Owner)
+enum class TalkerTarget {
+    TOP,    // Top Person Talking (Foreigner)
+    BOTTOM, // Bottom Person Talking (Phone Owner)
+    NONE    // Neither Person Talking (Mics Off)
+}
+
+enum class TranslationDirection {
+    DOWN, // Data flows Top -> Bottom (↓ Arrow)
+    UP,   // Data flows Bottom -> Top (↑ Arrow)
+    IDLE  // Neutral / Both texts empty (⇅ Neutral Arrow)
 }
 
 data class MainState(
@@ -23,9 +30,10 @@ data class MainState(
         language = Language.DEFAULT_OWNER_LANGUAGE,
         isAutoDetectEnabled = false
     ),
-    val activeMic: CardPosition? = null
+    val activeMic: TalkerTarget = TalkerTarget.NONE, // Non-nullable! NONE = Mics Off
+    val translationDirection: TranslationDirection = TranslationDirection.IDLE
 ) {
-    fun isListening(pos: CardPosition): Boolean = activeMic == pos
+    fun isListening(target: TalkerTarget): Boolean = activeMic == target
 
     val isSameLanguage: Boolean
         get() = topCard.language.bcp47Code == bottomCard.language.bcp47Code

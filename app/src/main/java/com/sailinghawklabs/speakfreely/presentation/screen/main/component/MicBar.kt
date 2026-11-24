@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.Button
@@ -65,9 +66,13 @@ fun MicBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(36.dp),
+            shape = RoundedCornerShape(12.dp),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = if (isListening) recButtonColor else MaterialTheme.colorScheme.primary
+                containerColor = if (isListening)
+                    recButtonColor
+                else
+                    MaterialTheme.colorScheme.primary
             )
         ) {
             if (isListening) {

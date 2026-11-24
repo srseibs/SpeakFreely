@@ -34,8 +34,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.sailinghawklabs.speakfreely.presentation.screen.main.component.ConversationPanel
+import com.sailinghawklabs.speakfreely.presentation.screen.main.component.DirectionalFlowArrow
+import com.sailinghawklabs.speakfreely.presentation.screen.main.component.LanguageCard
 import com.sailinghawklabs.speakfreely.presentation.screen.main.component.LanguagePickerSheet
+import com.sailinghawklabs.speakfreely.presentation.screen.main.component.MicBar
 import com.sailinghawklabs.speakfreely.presentation.screen.util.ObserveAsCommand
 import com.sailinghawklabs.speakfreely.presentation.theme.AppTheme
 import com.sailinghawklabs.speakfreely.presentation.theme.TextCream
@@ -66,41 +68,21 @@ fun MainScreenContent(
     state: MainState,
     onEvent: (MainScreenEvent) -> Unit,
 ) {
-    var activeLanguagePickerTarget by remember { mutableStateOf<Pair<PanelTarget, Boolean>?>(null) }
-    // Pair(panelTarget, isSpokenLanguage)
+    var activeLanguagePickerTarget by remember { mutableStateOf<TalkerTarget?>(null) }
 
-    activeLanguagePickerTarget?.let { (panel, isSpoken) ->
-        val selectedLang = if (isSpoken) {
-            if (panel == PanelTarget.EXTERNAL)
-                state.externalPanel.spokenLanguage
-            else
-                state.responsePanel.spokenLanguage
-        } else {
-            if (panel == PanelTarget.EXTERNAL)
-                state.externalPanel.targetLanguage
-            else
-                state.responsePanel.targetLanguage
-        }
-
-        val isAutoEnabled = if (panel == PanelTarget.EXTERNAL)
-            state.externalPanel.isAutoDetectEnabled
-        else
-            state.responsePanel.isAutoDetectEnabled
+    activeLanguagePickerTarget?.let { target ->
+        val cardState = if (target == TalkerTarget.TOP) state.topCard else state.bottomCard
 
         LanguagePickerSheet(
-            title = if (isSpoken) "Select Spoken Language" else "Select Translation Language",
-            selectedLanguage = selectedLang,
-            showAutoDetectOption = isSpoken,
-            isAutoDetectEnabled = isAutoEnabled,
+            title = if (target == TalkerTarget.TOP) "Select Foreign Language" else "Select Owner Language",
+            selectedLanguage = cardState.language,
+            showAutoDetectOption = target == TalkerTarget.TOP,
+            isAutoDetectEnabled = cardState.isAutoDetectEnabled,
             onAutoDetectToggled = { enabled ->
-                onEvent(MainScreenEvent.AutoDetectToggled(panel, enabled))
+                onEvent(MainScreenEvent.AutoDetectToggled(target, enabled))
             },
             onLanguageSelected = { newLanguage ->
-                if (isSpoken) {
-                    onEvent(MainScreenEvent.SpokenLanguageSelected(panel, newLanguage))
-                } else {
-                    onEvent(MainScreenEvent.TargetLanguageSelected(panel, newLanguage))
-                }
+                onEvent(MainScreenEvent.LanguageSelected(target, newLanguage))
             },
             onDismissRequest = { activeLanguagePickerTarget = null }
         )
@@ -147,116 +129,78 @@ fun MainScreenContent(
                     .imePadding()
                     .verticalScroll(scrollState)
                     .padding(horizontal = 12.dp, vertical = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // 1. Panel 1: THEY TALK (Foreign Speaker)
-                ConversationPanel(
-                    panelTitle = "THEY TALK",
-                    panelState = state.externalPanel,
-                    isListening = state.isListening(PanelTarget.EXTERNAL),
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    onMicClick = { onEvent(MainScreenEvent.MicButtonClicked(PanelTarget.EXTERNAL)) },
-                    onPlaySpokenClick = { onEvent(MainScreenEvent.PlaySpokenClicked(PanelTarget.EXTERNAL)) },
-                    onPlayTranslationClick = {
-                        onEvent(
-                            MainScreenEvent.PlayTranslationClicked(
-                                PanelTarget.EXTERNAL
-                            )
-                        )
-                    },
-                    onSpokenTextChange = { text ->
-                        onEvent(
-                            MainScreenEvent.SpokenTextEdited(
-                                PanelTarget.EXTERNAL,
-                                text
-                            )
-                        )
-                    },
-                    onTranslationTextChange = { text ->
-                        onEvent(
-                            MainScreenEvent.TranslationTextEdited(
-                                PanelTarget.EXTERNAL,
-                                text
-                            )
-                        )
-                    },
-                    onSpokenSpeedChange = { speed ->
-                        onEvent(
-                            MainScreenEvent.SpokenSpeedChanged(
-                                PanelTarget.EXTERNAL,
-                                speed
-                            )
-                        )
-                    },
-                    onTranslationSpeedChange = { speed ->
-                        onEvent(
-                            MainScreenEvent.TranslationSpeedChanged(
-                                PanelTarget.EXTERNAL,
-                                speed
-                            )
-                        )
-                    },
-                    onSpokenLanguageClick = {
-                        activeLanguagePickerTarget = Pair(PanelTarget.EXTERNAL, true)
-                    },
-                    onTranslationLanguageClick = {
-                        activeLanguagePickerTarget = Pair(PanelTarget.EXTERNAL, false)
-                    }
+                // 1. Top Mic Bar (Foreigner)
+                MicBar(
+                    language = state.topCard.language,
+                    isListening = state.isListening(TalkerTarget.TOP),
+                    onMicClick = { onEvent(MainScreenEvent.MicButtonClicked(TalkerTarget.TOP)) }
                 )
 
-                // 2. Panel 2: I TALK (Phone Owner)
-                ConversationPanel(
-                    panelTitle = "I TALK",
-                    panelState = state.responsePanel,
-                    isListening = state.isListening(PanelTarget.RESPONSE),
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    onMicClick = { onEvent(MainScreenEvent.MicButtonClicked(PanelTarget.RESPONSE)) },
-                    onPlaySpokenClick = { onEvent(MainScreenEvent.PlaySpokenClicked(PanelTarget.RESPONSE)) },
-                    onPlayTranslationClick = {
+                // 2. Top Language Card (Foreign Language)
+                LanguageCard(
+                    cardState = state.topCard,
+                    showAutoDetectStatus = true,
+                    onFocus = { onEvent(MainScreenEvent.CardFocused(TalkerTarget.TOP)) },
+                    onTextChanged = { text ->
                         onEvent(
-                            MainScreenEvent.PlayTranslationClicked(
-                                PanelTarget.RESPONSE
-                            )
-                        )
-                    },
-                    onSpokenTextChange = { text ->
-                        onEvent(
-                            MainScreenEvent.SpokenTextEdited(
-                                PanelTarget.RESPONSE,
+                            MainScreenEvent.TextEdited(
+                                TalkerTarget.TOP,
                                 text
                             )
                         )
                     },
-                    onTranslationTextChange = { text ->
+                    onPlayClick = { onEvent(MainScreenEvent.PlayClicked(TalkerTarget.TOP)) },
+                    onSpeedChange = { speed ->
                         onEvent(
-                            MainScreenEvent.TranslationTextEdited(
-                                PanelTarget.RESPONSE,
+                            MainScreenEvent.SpeedChanged(
+                                TalkerTarget.TOP,
+                                speed
+                            )
+                        )
+                    },
+                    onLanguageClick = { activeLanguagePickerTarget = TalkerTarget.TOP },
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+
+                // 3. Middle Directional Flow Arrow (180° Spring Rotation)
+                DirectionalFlowArrow(
+                    direction = state.translationDirection
+                )
+
+                // 4. Bottom Language Card (Owner Language)
+                LanguageCard(
+                    cardState = state.bottomCard,
+                    showAutoDetectStatus = false,
+                    onFocus = { onEvent(MainScreenEvent.CardFocused(TalkerTarget.BOTTOM)) },
+                    onTextChanged = { text ->
+                        onEvent(
+                            MainScreenEvent.TextEdited(
+                                TalkerTarget.BOTTOM,
                                 text
                             )
                         )
                     },
-                    onSpokenSpeedChange = { speed ->
+                    onPlayClick = { onEvent(MainScreenEvent.PlayClicked(TalkerTarget.BOTTOM)) },
+                    onSpeedChange = { speed ->
                         onEvent(
-                            MainScreenEvent.SpokenSpeedChanged(
-                                PanelTarget.RESPONSE,
+                            MainScreenEvent.SpeedChanged(
+                                TalkerTarget.BOTTOM,
                                 speed
                             )
                         )
                     },
-                    onTranslationSpeedChange = { speed ->
-                        onEvent(
-                            MainScreenEvent.TranslationSpeedChanged(
-                                PanelTarget.RESPONSE,
-                                speed
-                            )
-                        )
-                    },
-                    onSpokenLanguageClick = {
-                        activeLanguagePickerTarget = Pair(PanelTarget.RESPONSE, true)
-                    },
-                    onTranslationLanguageClick = {
-                        activeLanguagePickerTarget = Pair(PanelTarget.RESPONSE, false)
-                    }
+                    onLanguageClick = { activeLanguagePickerTarget = TalkerTarget.BOTTOM },
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+
+                // 5. Bottom Mic Bar (Owner)
+                MicBar(
+                    language = state.bottomCard.language,
+                    isListening = state.isListening(TalkerTarget.BOTTOM),
+                    onMicClick = { onEvent(MainScreenEvent.MicButtonClicked(TalkerTarget.BOTTOM)) }
                 )
             }
         }
@@ -268,9 +212,7 @@ fun MainScreenContent(
 private fun Preview() {
     AppTheme {
         MainScreenContent(
-            state = MainState(
-
-            ),
+            state = MainState(),
             onEvent = {}
         )
     }

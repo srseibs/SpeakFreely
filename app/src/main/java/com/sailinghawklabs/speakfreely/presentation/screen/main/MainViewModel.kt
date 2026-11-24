@@ -30,13 +30,13 @@ class MainViewModel(
 
     private val _state = MutableStateFlow(MainState())
 
-    // Combine local UI state with repository.observe*() reactive Flow stream for real-time updates
     val state: StateFlow<MainState> = combine(
         _state,
         sttRepository.observeSpeechResults().onEach { speechResult ->
             if (speechResult is SpeechResult.FinalResult && speechResult.text.isNotBlank()) {
-                val activePanel = _state.value.activeListeningPanel ?: PanelTarget.EXTERNAL
-                triggerTranslation(activePanel, speechResult.text)
+                val activeTarget =
+                    if (_state.value.activeMic != TalkerTarget.NONE) _state.value.activeMic else TalkerTarget.TOP
+                triggerTranslation(activeTarget, speechResult.text)
             }
         }
     ) { localState, speechResult ->
@@ -51,24 +51,25 @@ class MainViewModel(
         localState: MainState,
         speechResult: SpeechResult
     ): MainState {
-        val activePanel = localState.activeListeningPanel ?: return localState
+        val activeTarget = localState.activeMic
+        if (activeTarget == TalkerTarget.NONE) return localState
 
         return when (speechResult) {
-            SpeechResult.Idle -> localState.copy(activeListeningPanel = null)
+            SpeechResult.Idle -> localState.copy(activeMic = TalkerTarget.NONE)
             SpeechResult.Listening -> localState
             is SpeechResult.PartialResult -> {
-                updatePanelState(localState, activePanel) { panel ->
-                    panel.copy(spokenText = speechResult.text)
+                updateCardState(localState, activeTarget) { card ->
+                    card.copy(text = speechResult.text)
                 }
             }
 
             is SpeechResult.FinalResult -> {
-                updatePanelState(localState, activePanel) { panel ->
-                    panel.copy(spokenText = speechResult.text)
-                }.copy(activeListeningPanel = null)
+                updateCardState(localState, activeTarget) { card ->
+                    card.copy(text = speechResult.text)
+                }.copy(activeMic = TalkerTarget.NONE)
             }
 
-            is SpeechResult.Error -> localState.copy(activeListeningPanel = null)
+            is SpeechResult.Error -> localState.copy(activeMic = TalkerTarget.NONE)
         }
     }
 
@@ -82,37 +83,42 @@ class MainViewModel(
         }
     }
 
-    private fun triggerTranslation(target: PanelTarget, text: String) {
+    private fun triggerTranslation(sourceTarget: TalkerTarget, text: String) {
+        val targetTarget =
+            if (sourceTarget == TalkerTarget.TOP) TalkerTarget.BOTTOM else TalkerTarget.TOP
+        val flowDir =
+            if (sourceTarget == TalkerTarget.TOP) TranslationDirection.DOWN else TranslationDirection.UP
+
         if (text.isBlank()) {
-            updatePanel(target) { panel -> panel.copy(translatedText = "") }
+            updateCard(targetTarget) { card -> card.copy(text = "") }
+            _state.update { it.copy(translationDirection = TranslationDirection.IDLE) }
             return
         }
 
         viewModelScope.launch {
-            val currentPanel = if (target == PanelTarget.EXTERNAL)
-                _state.value.externalPanel
-            else
-                _state.value.responsePanel
+            val sourceCard =
+                if (sourceTarget == TalkerTarget.TOP) _state.value.topCard else _state.value.bottomCard
+            val targetCard =
+                if (sourceTarget == TalkerTarget.TOP) _state.value.bottomCard else _state.value.topCard
 
-            // 1. On EXTERNAL panel: Identify foreign language in ~10ms if Auto-Detect is enabled
+            // 1. Identify foreign language on-device in ~10ms if Auto-Detect is enabled on sourceCard
             val sourceLang =
-                if (target == PanelTarget.EXTERNAL && currentPanel.isAutoDetectEnabled) {
+                if (sourceTarget == TalkerTarget.TOP && sourceCard.isAutoDetectEnabled) {
                     val detectedCode = languageIdentifierRepository.identifyLanguage(text)
-                    val lang = Language.fromBcp47Code(detectedCode) ?: currentPanel.spokenLanguage
+                    val lang = Language.fromBcp47Code(detectedCode) ?: sourceCard.language
 
-                    // Automatically sync foreign language across BOTH panels!
+                    // Automatically update top card language
                     _state.update { state ->
                         state.copy(
-                            externalPanel = state.externalPanel.copy(spokenLanguage = lang),
-                            responsePanel = state.responsePanel.copy(targetLanguage = lang)
+                            topCard = state.topCard.copy(language = lang)
                         )
                     }
                     lang
                 } else {
-                    currentPanel.spokenLanguage
+                    sourceCard.language
                 }
 
-            val targetLang = currentPanel.targetLanguage
+            val targetLang = targetCard.language
 
             // 2. Perform ML Kit Translation
             val result = translationRepository.translate(
@@ -122,7 +128,8 @@ class MainViewModel(
             )
 
             result.getOrNull()?.let { translated ->
-                updatePanel(target) { panel -> panel.copy(translatedText = translated) }
+                updateCard(targetTarget) { card -> card.copy(text = translated) }
+                _state.update { it.copy(translationDirection = flowDir) }
             }
         }
     }
@@ -139,145 +146,120 @@ class MainViewModel(
             is MainScreenEvent.GoToSettings ->
                 send(MainScreenCommand.NavigateToSettings)
 
-            is MainScreenEvent.SpokenTextEdited -> {
-                updatePanel(event.panel) { panel ->
-                    panel.copy(spokenText = event.newText)
+            is MainScreenEvent.TextEdited -> {
+                val flowDir =
+                    if (event.target == TalkerTarget.TOP) TranslationDirection.DOWN else TranslationDirection.UP
+                updateCard(event.target) { card ->
+                    card.copy(text = event.newText)
                 }
                 if (event.newText.isBlank()) {
                     sttRepository.stopListening()
+                    _state.update { it.copy(translationDirection = TranslationDirection.IDLE) }
+                } else {
+                    _state.update { it.copy(translationDirection = flowDir) }
                 }
-                triggerTranslation(event.panel, event.newText)
+                triggerTranslation(event.target, event.newText)
             }
 
-            is MainScreenEvent.TranslationTextEdited -> {
-                updatePanel(event.panel) { panel ->
-                    panel.copy(translatedText = event.newText)
-                }
+            is MainScreenEvent.CardFocused -> {
+                val flowDir = if (event.target == TalkerTarget.TOP)
+                    TranslationDirection.DOWN
+                else
+                    TranslationDirection.UP
+                _state.update { it.copy(translationDirection = flowDir) }
             }
 
-            is MainScreenEvent.SpokenSpeedChanged -> {
-                updatePanel(event.panel) { panel ->
-                    panel.copy(spokenPlaybackSpeed = event.newSpeed)
-                }
-            }
-
-            is MainScreenEvent.TranslationSpeedChanged -> {
-                updatePanel(event.panel) { panel ->
-                    panel.copy(translatedPlaybackSpeed = event.newSpeed)
+            is MainScreenEvent.SpeedChanged -> {
+                updateCard(event.target) { card ->
+                    card.copy(playbackSpeed = event.newSpeed)
                 }
             }
 
             is MainScreenEvent.AutoDetectToggled -> {
-                updatePanel(event.panel) { panel ->
-                    panel.copy(isAutoDetectEnabled = event.enabled)
+                updateCard(event.target) { card ->
+                    card.copy(isAutoDetectEnabled = event.enabled)
                 }
             }
 
-            is MainScreenEvent.SpokenLanguageSelected -> {
-                _state.update { state ->
-                    if (event.panel == PanelTarget.EXTERNAL) {
-                        state.copy(
-                            externalPanel = state.externalPanel.copy(
-                                spokenLanguage = event.newLanguage,
-                                isAutoDetectEnabled = false
-                            ),
-                            responsePanel = state.responsePanel.copy(targetLanguage = event.newLanguage)
-                        )
-                    } else {
-                        state.copy(
-                            responsePanel = state.responsePanel.copy(spokenLanguage = event.newLanguage)
-                        )
-                    }
-                }
-                triggerTranslation(
-                    event.panel,
-                    if (event.panel == PanelTarget.EXTERNAL) _state.value.externalPanel.spokenText else _state.value.responsePanel.spokenText
-                )
-            }
-
-            is MainScreenEvent.TargetLanguageSelected -> {
-                updatePanel(event.panel) { panel ->
-                    panel.copy(targetLanguage = event.newLanguage)
-                }
-                triggerTranslation(
-                    event.panel,
-                    if (event.panel == PanelTarget.EXTERNAL) _state.value.externalPanel.spokenText else _state.value.responsePanel.spokenText
-                )
-            }
-
-            is MainScreenEvent.PlaySpokenClicked -> {
-                val targetPanel = if (event.panel == PanelTarget.EXTERNAL) {
-                    _state.value.externalPanel
-                } else {
-                    _state.value.responsePanel
-                }
-
-                if (targetPanel.spokenText.isNotBlank()) {
-                    playText(
-                        text = targetPanel.spokenText,
-                        language = targetPanel.spokenLanguage,
-                        rate = targetPanel.spokenPlaybackSpeed
+            is MainScreenEvent.LanguageSelected -> {
+                updateCard(event.target) { card ->
+                    card.copy(
+                        language = event.newLanguage,
+                        isAutoDetectEnabled = false
                     )
                 }
+                val activeText =
+                    if (event.target == TalkerTarget.TOP) _state.value.topCard.text else _state.value.bottomCard.text
+                triggerTranslation(event.target, activeText)
             }
 
-            is MainScreenEvent.PlayTranslationClicked -> {
-                val targetPanel = if (event.panel == PanelTarget.EXTERNAL) {
-                    _state.value.externalPanel
-                } else {
-                    _state.value.responsePanel
-                }
-
-                if (targetPanel.translatedText.isNotBlank()) {
+            is MainScreenEvent.PlayClicked -> {
+                val card =
+                    if (event.target == TalkerTarget.TOP) _state.value.topCard else _state.value.bottomCard
+                if (card.text.isNotBlank()) {
                     playText(
-                        text = targetPanel.translatedText,
-                        language = targetPanel.targetLanguage,
-                        rate = targetPanel.translatedPlaybackSpeed
+                        text = card.text,
+                        language = card.language,
+                        rate = card.playbackSpeed
                     )
                 }
             }
 
             is MainScreenEvent.MicButtonClicked -> {
-                val isTappedPanelActive = _state.value.activeListeningPanel == event.panel
+                val wasTappedActive = _state.value.activeMic == event.target
 
                 sttRepository.stopListening()
 
-                if (isTappedPanelActive) {
-                    // Stop active recording
-                    _state.update { it.copy(activeListeningPanel = null) }
+                if (wasTappedActive) {
+                    val hasText =
+                        _state.value.topCard.text.isNotBlank() || _state.value.bottomCard.text.isNotBlank()
+                    _state.update {
+                        it.copy(
+                            activeMic = TalkerTarget.NONE,
+                            translationDirection = if (hasText) it.translationDirection else TranslationDirection.IDLE
+                        )
+                    }
                 } else {
-                    // Start recording on tapped panel
-                    _state.update { it.copy(activeListeningPanel = event.panel) }
-                    val targetPanel =
-                        if (event.panel == PanelTarget.EXTERNAL) _state.value.externalPanel else _state.value.responsePanel
-                    sttRepository.startListening(targetPanel.spokenLanguage)
+                    val flowDir =
+                        if (event.target == TalkerTarget.TOP) TranslationDirection.DOWN else TranslationDirection.UP
+                    _state.update {
+                        it.copy(
+                            activeMic = event.target,
+                            translationDirection = flowDir
+                        )
+                    }
+                    val activeCard =
+                        if (event.target == TalkerTarget.TOP) _state.value.topCard else _state.value.bottomCard
+                    sttRepository.startListening(activeCard.language)
                 }
             }
         }
     }
 
-    private fun updatePanel(
-        target: PanelTarget,
-        updateBlock: (PanelState) -> PanelState
+    private fun updateCard(
+        target: TalkerTarget,
+        updateBlock: (LanguageCardState) -> LanguageCardState
     ) {
         _state.update { currentState ->
-            updatePanelState(currentState, target, updateBlock)
+            updateCardState(currentState, target, updateBlock)
         }
     }
 
-    private fun updatePanelState(
+    private fun updateCardState(
         state: MainState,
-        target: PanelTarget,
-        updateBlock: (PanelState) -> PanelState
+        target: TalkerTarget,
+        updateBlock: (LanguageCardState) -> LanguageCardState
     ): MainState {
         return when (target) {
-            PanelTarget.EXTERNAL -> state.copy(
-                externalPanel = updateBlock(state.externalPanel)
+            TalkerTarget.TOP -> state.copy(
+                topCard = updateBlock(state.topCard)
             )
 
-            PanelTarget.RESPONSE -> state.copy(
-                responsePanel = updateBlock(state.responsePanel)
+            TalkerTarget.BOTTOM -> state.copy(
+                bottomCard = updateBlock(state.bottomCard)
             )
+
+            TalkerTarget.NONE -> state
         }
     }
 

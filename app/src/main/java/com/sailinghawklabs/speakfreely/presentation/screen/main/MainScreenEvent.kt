@@ -2,32 +2,19 @@ package com.sailinghawklabs.speakfreely.presentation.screen.main
 
 import com.sailinghawklabs.speakfreely.domain.model.Language
 
-// Events from the Screen ---> to the ViewModel
-
-enum class PanelTarget {
-    EXTERNAL,
-    RESPONSE
-}
-
 sealed interface MainScreenEvent {
     data object GoToSettings : MainScreenEvent
 
-    // Panel Actions
-    data class MicButtonClicked(val panel: PanelTarget) : MainScreenEvent
-    data class PlaySpokenClicked(val panel: PanelTarget) : MainScreenEvent
-    data class PlayTranslationClicked(val panel: PanelTarget) : MainScreenEvent
+    // Mic Actions
+    data class MicButtonClicked(val target: TalkerTarget) : MainScreenEvent
 
-    data class SpokenTextEdited(val panel: PanelTarget, val newText: String) : MainScreenEvent
-    data class TranslationTextEdited(val panel: PanelTarget, val newText: String) : MainScreenEvent
-
-    data class SpokenSpeedChanged(val panel: PanelTarget, val newSpeed: Float) : MainScreenEvent
-    data class TranslationSpeedChanged(val panel: PanelTarget, val newSpeed: Float) :
+    // Card Actions
+    data class TextEdited(val target: TalkerTarget, val newText: String) : MainScreenEvent
+    data class PlayClicked(val target: TalkerTarget) : MainScreenEvent
+    data class CardFocused(val target: TalkerTarget) : MainScreenEvent
+    data class SpeedChanged(val target: TalkerTarget, val newSpeed: Float) : MainScreenEvent
+    data class LanguageSelected(val target: TalkerTarget, val newLanguage: Language) :
         MainScreenEvent
 
-    data class SpokenLanguageSelected(val panel: PanelTarget, val newLanguage: Language) :
-        MainScreenEvent
-
-    data class TargetLanguageSelected(val panel: PanelTarget, val newLanguage: Language) :
-        MainScreenEvent
-    data class AutoDetectToggled(val panel: PanelTarget, val enabled: Boolean) : MainScreenEvent
+    data class AutoDetectToggled(val target: TalkerTarget, val enabled: Boolean) : MainScreenEvent
 }
