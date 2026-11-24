@@ -2,32 +2,31 @@ package com.sailinghawklabs.speakfreely.presentation.screen.main
 
 import com.sailinghawklabs.speakfreely.domain.model.Language
 
-data class PanelState(
-    val spokenText: String = "",
-    val translatedText: String = "",
-    val spokenLanguage: Language,             // Input language for this panel
-    val targetLanguage: Language,             // Output translation language for this panel
-    val isAutoDetectEnabled: Boolean = true,
-    val spokenPlaybackSpeed: Float = 1.0f,    // Playback speed for Play Spoken
-    val translatedPlaybackSpeed: Float = 1.0f // Playback speed for Play Translation
-) {
-    // Helper: returns true when spoken & target languages are identical (e.g. English -> English)
-    val isSameLanguage: Boolean
-        get() = spokenLanguage.bcp47Code.equals(targetLanguage.bcp47Code, ignoreCase = true)
+data class LanguageCardState(
+    val text: String = "",
+    val language: Language,
+    val playbackSpeed: Float = 1.0f,
+    val isAutoDetectEnabled: Boolean = false
+)
+
+enum class CardPosition {
+    TOP,   // Top Card & Top Mic (Foreigner)
+    BOTTOM // Bottom Card & Bottom Mic (Phone Owner)
 }
 
 data class MainState(
-    val externalPanel: PanelState = PanelState(
-        spokenLanguage = Language.DEFAULT_TARGET_LANGUAGE,  // Spanish (es-MX)
-        targetLanguage = Language.DEFAULT_OWNER_LANGUAGE, // English (en-US)
-        isAutoDetectEnabled = true                        // ⚡ AUTO ON for Foreigner
+    val topCard: LanguageCardState = LanguageCardState(
+        language = Language.DEFAULT_TARGET_LANGUAGE,
+        isAutoDetectEnabled = true
     ),
-    val responsePanel: PanelState = PanelState(
-        spokenLanguage = Language.DEFAULT_OWNER_LANGUAGE,  // English (en-US)
-        targetLanguage = Language.DEFAULT_TARGET_LANGUAGE,// Spanish (es-MX)
-        isAutoDetectEnabled = false                       // 🔒 AUTO OFF for Owner
+    val bottomCard: LanguageCardState = LanguageCardState(
+        language = Language.DEFAULT_OWNER_LANGUAGE,
+        isAutoDetectEnabled = false
     ),
-    val activeListeningPanel: PanelTarget? = null          // Single source of truth for mic recording!
+    val activeMic: CardPosition? = null
 ) {
-    fun isListening(panel: PanelTarget): Boolean = activeListeningPanel == panel
+    fun isListening(pos: CardPosition): Boolean = activeMic == pos
+
+    val isSameLanguage: Boolean
+        get() = topCard.language.bcp47Code == bottomCard.language.bcp47Code
 }
