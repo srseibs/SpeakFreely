@@ -35,10 +35,7 @@ class MainViewModel(
         _state,
         sttRepository.observeSpeechResults().onEach { speechResult ->
             if (speechResult is SpeechResult.FinalResult && speechResult.text.isNotBlank()) {
-                val activePanel = if (_state.value.externalPanel.isListening)
-                    PanelTarget.EXTERNAL
-                else
-                    PanelTarget.RESPONSE
+                val activePanel = _state.value.activeListeningPanel ?: PanelTarget.EXTERNAL
                 triggerTranslation(activePanel, speechResult.text)
             }
         }
@@ -50,60 +47,28 @@ class MainViewModel(
         initialValue = MainState()
     )
 
-    private fun calculateState(localState: MainState, speechResult: SpeechResult): MainState {
+    private fun calculateState(
+        localState: MainState,
+        speechResult: SpeechResult
+    ): MainState {
+        val activePanel = localState.activeListeningPanel ?: return localState
+
         return when (speechResult) {
-            SpeechResult.Idle -> localState.copy(
-                externalPanel = localState.externalPanel.copy(isListening = false),
-                responsePanel = localState.responsePanel.copy(isListening = false)
-            )
-
-            SpeechResult.Listening -> {
-                if (localState.externalPanel.isListening) {
-                    localState.copy(externalPanel = localState.externalPanel.copy(isListening = true))
-                } else if (localState.responsePanel.isListening) {
-                    localState.copy(responsePanel = localState.responsePanel.copy(isListening = true))
-                } else {
-                    localState
-                }
-            }
-
+            SpeechResult.Idle -> localState.copy(activeListeningPanel = null)
+            SpeechResult.Listening -> localState
             is SpeechResult.PartialResult -> {
-                if (localState.externalPanel.isListening) {
-                    localState.copy(externalPanel = localState.externalPanel.copy(spokenText = speechResult.text))
-                } else if (localState.responsePanel.isListening) {
-                    localState.copy(responsePanel = localState.responsePanel.copy(spokenText = speechResult.text))
-                } else {
-                    localState
+                updatePanelState(localState, activePanel) { panel ->
+                    panel.copy(spokenText = speechResult.text)
                 }
             }
 
             is SpeechResult.FinalResult -> {
-                if (localState.externalPanel.isListening) {
-                    localState.copy(
-                        externalPanel = localState.externalPanel.copy(
-                            spokenText = speechResult.text,
-                            isListening = false
-                        )
-                    )
-                } else if (localState.responsePanel.isListening) {
-                    localState.copy(
-                        responsePanel = localState.responsePanel.copy(
-                            spokenText = speechResult.text,
-                            isListening = false
-                        )
-                    )
-                } else {
-                    localState.copy(
-                        externalPanel = localState.externalPanel.copy(isListening = false),
-                        responsePanel = localState.responsePanel.copy(isListening = false)
-                    )
-                }
+                updatePanelState(localState, activePanel) { panel ->
+                    panel.copy(spokenText = speechResult.text)
+                }.copy(activeListeningPanel = null)
             }
 
-            is SpeechResult.Error -> localState.copy(
-                externalPanel = localState.externalPanel.copy(isListening = false),
-                responsePanel = localState.responsePanel.copy(isListening = false)
-            )
+            is SpeechResult.Error -> localState.copy(activeListeningPanel = null)
         }
     }
 
@@ -171,13 +136,15 @@ class MainViewModel(
 
     fun onEvent(event: MainScreenEvent) {
         when (event) {
-
             is MainScreenEvent.GoToSettings ->
                 send(MainScreenCommand.NavigateToSettings)
 
             is MainScreenEvent.SpokenTextEdited -> {
                 updatePanel(event.panel) { panel ->
                     panel.copy(spokenText = event.newText)
+                }
+                if (event.newText.isBlank()) {
+                    sttRepository.stopListening()
                 }
                 triggerTranslation(event.panel, event.newText)
             }
@@ -207,11 +174,20 @@ class MainViewModel(
             }
 
             is MainScreenEvent.SpokenLanguageSelected -> {
-                updatePanel(event.panel) { panel ->
-                    panel.copy(
-                        spokenLanguage = event.newLanguage,
-                        isAutoDetectEnabled = false // Lock when manually picked
-                    )
+                _state.update { state ->
+                    if (event.panel == PanelTarget.EXTERNAL) {
+                        state.copy(
+                            externalPanel = state.externalPanel.copy(
+                                spokenLanguage = event.newLanguage,
+                                isAutoDetectEnabled = false
+                            ),
+                            responsePanel = state.responsePanel.copy(targetLanguage = event.newLanguage)
+                        )
+                    } else {
+                        state.copy(
+                            responsePanel = state.responsePanel.copy(spokenLanguage = event.newLanguage)
+                        )
+                    }
                 }
                 triggerTranslation(
                     event.panel,
@@ -229,10 +205,54 @@ class MainViewModel(
                 )
             }
 
+            is MainScreenEvent.PlaySpokenClicked -> {
+                val targetPanel = if (event.panel == PanelTarget.EXTERNAL) {
+                    _state.value.externalPanel
+                } else {
+                    _state.value.responsePanel
+                }
 
-            else -> {}
+                if (targetPanel.spokenText.isNotBlank()) {
+                    playText(
+                        text = targetPanel.spokenText,
+                        language = targetPanel.spokenLanguage,
+                        rate = targetPanel.spokenPlaybackSpeed
+                    )
+                }
+            }
 
+            is MainScreenEvent.PlayTranslationClicked -> {
+                val targetPanel = if (event.panel == PanelTarget.EXTERNAL) {
+                    _state.value.externalPanel
+                } else {
+                    _state.value.responsePanel
+                }
 
+                if (targetPanel.translatedText.isNotBlank()) {
+                    playText(
+                        text = targetPanel.translatedText,
+                        language = targetPanel.targetLanguage,
+                        rate = targetPanel.translatedPlaybackSpeed
+                    )
+                }
+            }
+
+            is MainScreenEvent.MicButtonClicked -> {
+                val isTappedPanelActive = _state.value.activeListeningPanel == event.panel
+
+                sttRepository.stopListening()
+
+                if (isTappedPanelActive) {
+                    // Stop active recording
+                    _state.update { it.copy(activeListeningPanel = null) }
+                } else {
+                    // Start recording on tapped panel
+                    _state.update { it.copy(activeListeningPanel = event.panel) }
+                    val targetPanel =
+                        if (event.panel == PanelTarget.EXTERNAL) _state.value.externalPanel else _state.value.responsePanel
+                    sttRepository.startListening(targetPanel.spokenLanguage)
+                }
+            }
         }
     }
 
@@ -241,15 +261,23 @@ class MainViewModel(
         updateBlock: (PanelState) -> PanelState
     ) {
         _state.update { currentState ->
-            when (target) {
-                PanelTarget.EXTERNAL -> currentState.copy(
-                    externalPanel = updateBlock(currentState.externalPanel)
-                )
+            updatePanelState(currentState, target, updateBlock)
+        }
+    }
 
-                PanelTarget.RESPONSE -> currentState.copy(
-                    responsePanel = updateBlock(currentState.responsePanel)
-                )
-            }
+    private fun updatePanelState(
+        state: MainState,
+        target: PanelTarget,
+        updateBlock: (PanelState) -> PanelState
+    ): MainState {
+        return when (target) {
+            PanelTarget.EXTERNAL -> state.copy(
+                externalPanel = updateBlock(state.externalPanel)
+            )
+
+            PanelTarget.RESPONSE -> state.copy(
+                responsePanel = updateBlock(state.responsePanel)
+            )
         }
     }
 

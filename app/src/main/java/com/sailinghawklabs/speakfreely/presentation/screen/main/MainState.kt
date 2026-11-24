@@ -5,9 +5,8 @@ import com.sailinghawklabs.speakfreely.domain.model.Language
 data class PanelState(
     val spokenText: String = "",
     val translatedText: String = "",
-    val spokenLanguage: Language,           // Input language for this panel
-    val targetLanguage: Language,           // Output translation language for this panel
-    val isListening: Boolean = false,
+    val spokenLanguage: Language,             // Input language for this panel
+    val targetLanguage: Language,             // Output translation language for this panel
     val isAutoDetectEnabled: Boolean = true,
     val spokenPlaybackSpeed: Float = 1.0f,    // Playback speed for Play Spoken
     val translatedPlaybackSpeed: Float = 1.0f // Playback speed for Play Translation
@@ -27,5 +26,8 @@ data class MainState(
         spokenLanguage = Language.DEFAULT_OWNER_LANGUAGE,  // English (en-US)
         targetLanguage = Language.DEFAULT_TARGET_LANGUAGE,// Spanish (es-MX)
         isAutoDetectEnabled = false                       // 🔒 AUTO OFF for Owner
-    )
-)
+    ),
+    val activeListeningPanel: PanelTarget? = null          // Single source of truth for mic recording!
+) {
+    fun isListening(panel: PanelTarget): Boolean = activeListeningPanel == panel
+}

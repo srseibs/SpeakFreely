@@ -162,6 +162,29 @@ for **SpeakFreely**.
   - **Single Source of Truth**: Eliminates theme switching bugs, color regressions, and dual-palette
     maintenance.
 
+### 10. 2-Card Flow Arrow Architecture (`↓` vs `↑`)
+
+* **Status**: Approved
+* **Category**: Presentation & Conversation Workspace Architecture
+* **The 2-Card Model**:
+    - Replaces complex panel terminology (`EXTERNAL`, `RESPONSE`, `SPOKEN`, `TRANSLATION`) with
+      direct, self-explaining language cards: **Top Language Card** (e.g., `SPANISH 🇲🇽`) and
+      **Bottom Language Card** (e.g., `ENGLISH 🇺🇸`).
+* **Outer Tabletop Mics**:
+    - **Top Mic Bar**: Positioned at top outer edge, physically close to foreign speaker across
+      table.
+    - **Bottom Mic Bar**: Positioned at bottom outer edge, physically close to phone owner.
+* **Middle 180° Rotating Flow Arrow (`↓` vs `↑`)**:
+    - Centered between cards.
+    - **Top Mic Pressed**: Arrow animates 180° pointing **DOWN (`↓`)** in Warm Copper
+      (`#D96B27`) $\longrightarrow$ Foreign speech streams down into English text below.
+    - **Bottom Mic Pressed**: Arrow animates pointing **UP (`↑`)** in Warm Copper
+      (`#D96B27`) $\longrightarrow$ English speech streams up into Spanish text above.
+* **Benefits**:
+    - Reduces total text fields on screen from 4 down to **2**!
+    - Reduces total play buttons on screen from 4 down to **2**!
+    - Fits 100% on any mobile viewport with zero vertical scrolling required.
+
 ---
 
 ## Use Cases & User Flows
@@ -363,18 +386,19 @@ The core navigation structure for **SpeakFreely** uses a Material 3 **Bottom Nav
 
 ### 2. Main Workspace Tabs (`Destination.Main`)
 
-#### Tab A: `Conversation` (Symmetrical 2-Panel Speech Workspace)
+#### Tab A: `Conversation` (2-Card Flow Arrow Workspace)
 
-* **Purpose**: Symmetrical 2-panel workspace for 1-on-1 conversations (`External` vs `Response`).
+* **Purpose**: Streamlined, 2-Card Flow Arrow workspace for 1-on-1 conversations
+  (`Top Language Card` vs `Bottom Language Card`).
 * **Responsibilities**:
-  - Panel 1 (`External`): Foreign Speaker panel with `[ ⚡ Spanish 🇲🇽 ▼ ]` language pill and
-    top-right `[ 🎙️ Record ]` button.
-  - Panel 2 (`Response`): Phone Owner panel with `[ 🔒 English 🇺🇸 ▼ ]` language pill and top-right
-    `[ 🎙️ Record ]` button.
-  - Section-Coupled Play Buttons: `[ 🔊 Play Spoken ]` inside Spoken box, and
-    `[ ▶ Play Translation │ ▼ ]` split button inside Translation box.
-  - Split Speed Dropdown: Tapping `▶` plays audio immediately; tapping `▼` opens the $\pm 50\%$
-    speed slider dropdown menu.
+    - Outer Top Mic Bar: `[ 🎙️ Record Spanish 🇲🇽 ]` (Foreigner's mic).
+    - Top Language Card: `[ ⚡ SPANISH 🇲🇽 ▼ ]` language pill + `[ ▶ │ ▼ ]` split play button +
+      Spanish text field.
+    - Middle Flow Arrow: 180° spring-rotating arrow (`↓` vs `↑`) demonstrating live translation flow
+      direction.
+    - Bottom Language Card: `[ ENGLISH 🇺🇸 ▼ ]` language pill + `[ ▶ │ ▼ ]` split play button +
+      English text field.
+    - Outer Bottom Mic Bar: `[ 🎙️ Record English 🇺🇸 ]` (Owner's mic).
 
 #### ASCII UI Wireframe:
 
@@ -383,29 +407,23 @@ The core navigation structure for **SpeakFreely** uses a Material 3 **Bottom Nav
   SpeakFreely                                                       ⚙️
 ========================================================================
 
-  ┌──────────────────────────────────────────────────────────────────┐
-  │ EXTERNAL · [ ⚡ Spanish 🇲🇽 ▼ ]                  [ 🎙️ Record ]     │
-  │──────────────────────────────────────────────────────────────────│
-  │ Spoken (Spanish 🇲🇽):                                             │
-  │ "¿Dónde está la estación de tren más cercana?"            [ ✕ ]   │
-  │                                           [ 🔊 Play Spoken 🇲🇽 ] │
-  │──────────────────────────────────────────────────────────────────│
-  │ Translation (English 🇺🇸):                                        │
-  │ "Where is the nearest train station?"                     [ ✕ ]   │
-  │                                      [ ▶ Play Translation │ ▼ ] │
-  └──────────────────────────────────────────────────────────────────┘
+  [ 🎙️ Record Spanish 🇲🇽 ]                      <-- TOP MIC BAR
 
   ┌──────────────────────────────────────────────────────────────────┐
-  │ RESPONSE · [ 🔒 English 🇺🇸 ▼ ]                  [ 🎙️ Record ]     │
-  │──────────────────────────────────────────────────────────────────│
-  │ Spoken (English 🇺🇸):                                             │
-  │ "Go straight for two blocks, then turn left."             [ ✕ ]   │
-  │                                           [ 🔊 Play Spoken 🇺🇸 ] │
-  │──────────────────────────────────────────────────────────────────│
-  │ Translation (Spanish 🇲🇽):                                        │
-  │ "Vaya derecho dos cuadras y luego gire a la izquierda."   [ ✕ ]   │
-  │                                      [ ▶ Play Translation │ ▼ ] │
+  │ [ ⚡ SPANISH 🇲🇽 ▼ ]                                   [ ▶ │ ▼ ] │
+  │ "Hola, ¿cómo estás hoy?"                                 [ ✕ ]   │
   └──────────────────────────────────────────────────────────────────┘
+
+                       │  ▲ (180° Rotating Arrow)
+                       │  │  Points DOWN (↓) when Top Mic records
+                       ▼  │  Points UP   (↑) when Bottom Mic records
+
+  ┌──────────────────────────────────────────────────────────────────┐
+  │ [ ENGLISH 🇺🇸 ▼ ]                                     [ ▶ │ ▼ ] │
+  │ "Hello, how are you today?"                              [ ✕ ]   │
+  └──────────────────────────────────────────────────────────────────┘
+
+  [ 🎙️ Record English 🇺🇸 ]                      <-- BOTTOM MIC BAR
 
 ========================================================================
 ```
@@ -470,6 +488,9 @@ The core navigation structure for **SpeakFreely** uses a Material 3 **Bottom Nav
 
 ## Revision Log
 
+* **2026-10-14**: Added Approved Decision 10: 2-Card Flow Arrow Architecture (`↓` vs `↑`), Outer
+  Tabletop Mics, 180° Rotating Flow Arrow, and updated ASCII Wireframe.
+* **2026-10-14**: Added Approved Decision 9: Single Dark Theme Strategy (`MyDarkColorScheme`).
 * **2026-10-14**: Added Approved Decision 8: Symmetrical 2-Panel Architecture (`External` vs
   `Response`), 4-Rule Matrix per panel, and same-language 0ms bypass optimization.
 * **2026-10-14**: Added Use Case 6: Live Dual-Column Closed Captions Mode and 3-Tab Bottom

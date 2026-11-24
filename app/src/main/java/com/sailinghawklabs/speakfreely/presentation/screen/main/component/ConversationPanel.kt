@@ -64,6 +64,7 @@ fun ConversationPanel(
     modifier: Modifier = Modifier,
     panelTitle: String,
     panelState: PanelState,
+    isListening: Boolean = false, // Direct parameter driven by state.isListening(panel)!
     onMicClick: () -> Unit,
     onPlaySpokenClick: () -> Unit,
     onPlayTranslationClick: () -> Unit,
@@ -91,7 +92,7 @@ fun ConversationPanel(
             // ============================================================
             PanelHeaderRow(
                 title = panelTitle,
-                isListening = panelState.isListening,
+                isListening = isListening,
                 onMicClick = onMicClick
             )
 
@@ -439,7 +440,7 @@ private fun ConversationPanelPrev() {
     var spokenSpeed by remember { mutableFloatStateOf(1.20f) }
     var translationSpeed by remember { mutableFloatStateOf(1.0f) }
 
-    val panelState = remember(isListening, spokenSpeed, translationSpeed) {
+    val panelState = remember(spokenSpeed, translationSpeed) {
         PanelState(
             spokenText = "¿Dónde está la estación de tren más cercana?",
             translatedText = "Where is the nearest train station?",
@@ -447,7 +448,6 @@ private fun ConversationPanelPrev() {
             targetLanguage = Language.DEFAULT_OWNER_LANGUAGE,
             spokenPlaybackSpeed = spokenSpeed,
             translatedPlaybackSpeed = translationSpeed,
-            isListening = isListening,
             isAutoDetectEnabled = true
         )
     }
@@ -456,6 +456,7 @@ private fun ConversationPanelPrev() {
         ConversationPanel(
             panelTitle = "THEY TALK",
             panelState = panelState,
+            isListening = isListening,
             onMicClick = { isListening = !isListening },
             onPlaySpokenClick = {},
             onPlayTranslationClick = {},

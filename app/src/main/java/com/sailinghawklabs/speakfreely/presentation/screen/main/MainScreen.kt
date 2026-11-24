@@ -149,10 +149,11 @@ fun MainScreenContent(
                     .padding(horizontal = 12.dp, vertical = 4.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                // 1. Panel 1: EXTERNAL (Foreign Speaker)
+                // 1. Panel 1: THEY TALK (Foreign Speaker)
                 ConversationPanel(
                     panelTitle = "THEY TALK",
                     panelState = state.externalPanel,
+                    isListening = state.isListening(PanelTarget.EXTERNAL),
                     containerColor = MaterialTheme.colorScheme.surfaceVariant,
                     onMicClick = { onEvent(MainScreenEvent.MicButtonClicked(PanelTarget.EXTERNAL)) },
                     onPlaySpokenClick = { onEvent(MainScreenEvent.PlaySpokenClicked(PanelTarget.EXTERNAL)) },
@@ -203,10 +204,11 @@ fun MainScreenContent(
                     }
                 )
 
-                // 2. Panel 2: RESPONSE (Phone Owner)
+                // 2. Panel 2: I TALK (Phone Owner)
                 ConversationPanel(
                     panelTitle = "I TALK",
                     panelState = state.responsePanel,
+                    isListening = state.isListening(PanelTarget.RESPONSE),
                     containerColor = MaterialTheme.colorScheme.surface,
                     onMicClick = { onEvent(MainScreenEvent.MicButtonClicked(PanelTarget.RESPONSE)) },
                     onPlaySpokenClick = { onEvent(MainScreenEvent.PlaySpokenClicked(PanelTarget.RESPONSE)) },
